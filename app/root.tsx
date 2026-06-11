@@ -11,6 +11,7 @@ import type { Route } from "./+types/root"
 import { ThemeToggle } from "~/components/ui/theme-toggle"
 import { SplashIntro } from "~/components/ui/splash-intro"
 import { NotificationProvider } from "~/components/ui/notifications"
+import { Backdrop } from "~/components/ui/backdrop"
 import "./app.css"
 
 export const links: Route.LinksFunction = () => [
@@ -34,6 +35,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => (
       <script dangerouslySetInnerHTML={{ __html: theme_setup }} />
     </head>
     <body>
+      <Backdrop />
       <SplashIntro />
       <NotificationProvider>{children}</NotificationProvider>
       <ThemeToggle />

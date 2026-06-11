@@ -34,5 +34,5 @@
 
 html,
 body {
-  @apply bg-page text-ink font-sans font-normal;
+  @apply text-ink font-sans font-normal;
 }

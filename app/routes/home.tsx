@@ -36,7 +36,7 @@ const Home = ({ loaderData }: Route.ComponentProps) => {
   }, [])
 
   return (
-    <div className="flex min-h-screen bg-page">
+    <div className="flex min-h-screen">
       <SideRail />
       <main className="flex flex-1 flex-col gap-6 p-6">
         <header className="flex items-center justify-between">
