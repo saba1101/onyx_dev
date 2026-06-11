@@ -1,40 +1,69 @@
+import { useEffect } from "react"
+import { Form, useSearchParams } from "react-router"
+import { motion } from "motion/react"
 import type { Route } from "./+types/home"
+import { require_account } from "~/lib/auth.server"
+import { SideRail } from "~/components/ui/side-rail"
+import { use_notify } from "~/hooks/use-notify"
 
 export const meta = ({}: Route.MetaArgs) => [
   { title: "Onyx Dev" },
   { name: "description", content: "Onyx Dev" },
 ]
 
-const swatches = [
-  { name: "watermelon", className: "bg-watermelon" },
-  { name: "royal-gold", className: "bg-royal-gold" },
-  { name: "mint-cream", className: "bg-mint-cream" },
-  { name: "ink-black", className: "bg-ink-black" },
-  { name: "charcoal-blue", className: "bg-charcoal-blue" },
-]
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  const { account } = await require_account(request)
+  return { email: account.email }
+}
 
-const Home = () => {
+const Home = ({ loaderData }: Route.ComponentProps) => {
+  const notify = use_notify()
+  const [params, set_params] = useSearchParams()
+
+  useEffect(() => {
+    const welcome = params.get("welcome")
+    if (!welcome) return
+    notify({
+      tone: "success",
+      title: welcome === "up" ? "Account ready" : "Welcome back",
+      message: `Signed in as ${loaderData.email}`,
+    })
+    const next = new URLSearchParams(params)
+    next.delete("welcome")
+    set_params(next, { replace: true })
+  }, [])
+
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <h1 className="text-3xl font-bold text-primary">Onyx Dev</h1>
-      <p className="mt-2 text-muted">Toggle the theme from the bottom-right.</p>
+    <div className="flex min-h-screen bg-page">
+      <SideRail />
+      <main className="flex flex-1 flex-col gap-6 p-6">
+        <header className="flex items-center justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-wide text-muted">Workspace</p>
+            <h1 className="text-xl font-semibold tracking-tight">Onyx Dev</h1>
+          </div>
+          <Form method="post" action="/logout">
+            <motion.button
+              type="submit"
+              whileTap={{ scale: 0.98 }}
+              className="rounded-lg border border-line bg-card px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:text-ink"
+            >
+              Sign out
+            </motion.button>
+          </Form>
+        </header>
 
-      <div className="mt-8 rounded-2xl border border-line bg-card p-6">
-        <h2 className="text-lg font-semibold">Palette</h2>
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-5">
-          {swatches.map((swatch) => (
-            <div key={swatch.name} className="text-center">
-              <div
-                className={`${swatch.className} h-16 w-full rounded-xl border border-line`}
-              />
-              <span className="mt-2 block text-xs text-muted">
-                {swatch.name}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </main>
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="max-w-md rounded-2xl border border-line bg-card/80 p-5 shadow-lg shadow-ink-black/5 backdrop-blur"
+        >
+          <p className="text-xs text-muted">Signed in as</p>
+          <p className="mt-0.5 text-sm font-semibold text-ink">{loaderData.email}</p>
+        </motion.section>
+      </main>
+    </div>
   )
 }
 
