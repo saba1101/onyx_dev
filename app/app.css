@@ -1,15 +1,38 @@
 @import "tailwindcss";
+@import "./fonts.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-sans: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-watermelon: hsl(348 85% 54%);
+  --color-royal-gold: hsl(49 93% 67%);
+  --color-mint-cream: hsl(169 100% 98%);
+  --color-ink-black: hsl(213 94% 6%);
+  --color-charcoal-blue: hsl(212 17% 33%);
+
+  --color-page: var(--color-mint-cream);
+  --color-card: hsl(169 55% 99%);
+  --color-ink: var(--color-ink-black);
+  --color-muted: var(--color-charcoal-blue);
+  --color-line: hsl(169 22% 86%);
+  --color-primary: var(--color-watermelon);
+  --color-accent: var(--color-royal-gold);
+}
+
+.dark {
+  --color-page: var(--color-ink-black);
+  --color-card: hsl(213 45% 11%);
+  --color-ink: var(--color-mint-cream);
+  --color-muted: hsl(212 18% 64%);
+  --color-line: hsl(212 24% 22%);
+  --color-primary: var(--color-watermelon);
+  --color-accent: var(--color-royal-gold);
 }
 
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
-
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
+  @apply bg-page text-ink font-sans font-normal;
 }

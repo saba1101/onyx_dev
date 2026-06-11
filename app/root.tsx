@@ -8,9 +8,16 @@ import {
 } from "react-router"
 
 import type { Route } from "./+types/root"
+import { ThemeToggle } from "~/components/ui/theme-toggle"
 import "./app.css"
 
 export const links: Route.LinksFunction = () => []
+
+const theme_setup = `(() => {
+  const saved = localStorage.getItem("theme")
+  const dark = saved ? saved === "dark" : matchMedia("(prefers-color-scheme: dark)").matches
+  document.documentElement.classList.toggle("dark", dark)
+})()`
 
 export const Layout = ({ children }: { children: React.ReactNode }) => (
   <html lang="en">
@@ -19,9 +26,11 @@ export const Layout = ({ children }: { children: React.ReactNode }) => (
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <Meta />
       <Links />
+      <script dangerouslySetInnerHTML={{ __html: theme_setup }} />
     </head>
     <body>
       {children}
+      <ThemeToggle />
       <ScrollRestoration />
       <Scripts />
     </body>
