@@ -7,28 +7,28 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --font-sans: "JetBrains Mono", ui-monospace, monospace;
 
-  --color-watermelon: hsl(348 85% 54%);
+  --color-flag-red: hsl(355 81% 47%);
   --color-royal-gold: hsl(49 93% 67%);
-  --color-mint-cream: hsl(169 100% 98%);
-  --color-ink-black: hsl(213 94% 6%);
-  --color-charcoal-blue: hsl(212 17% 33%);
+  --color-light-green: hsl(113 63% 66%);
+  --color-carbon-black: hsl(210 7% 11%);
+  --color-platinum: hsl(210 17% 95%);
 
-  --color-page: var(--color-mint-cream);
-  --color-card: hsl(169 55% 99%);
-  --color-ink: var(--color-ink-black);
-  --color-muted: var(--color-charcoal-blue);
-  --color-line: hsl(169 22% 86%);
-  --color-primary: var(--color-watermelon);
+  --color-page: var(--color-platinum);
+  --color-card: hsl(210 17% 99%);
+  --color-ink: var(--color-carbon-black);
+  --color-muted: hsl(210 8% 40%);
+  --color-line: hsl(210 16% 86%);
+  --color-primary: var(--color-flag-red);
   --color-accent: var(--color-royal-gold);
 }
 
 .dark {
-  --color-page: var(--color-ink-black);
-  --color-card: hsl(213 45% 11%);
-  --color-ink: var(--color-mint-cream);
-  --color-muted: hsl(212 18% 64%);
-  --color-line: hsl(212 24% 22%);
-  --color-primary: var(--color-watermelon);
+  --color-page: var(--color-carbon-black);
+  --color-card: hsl(210 8% 15%);
+  --color-ink: var(--color-platinum);
+  --color-muted: hsl(210 8% 62%);
+  --color-line: hsl(210 9% 22%);
+  --color-primary: var(--color-flag-red);
   --color-accent: var(--color-royal-gold);
 }
 

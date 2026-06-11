@@ -30,7 +30,7 @@ export const SideRail = () => {
               aria-label={item.label}
               className={`grid h-9 w-9 place-items-center rounded-lg transition-colors duration-200 ${
                 active
-                  ? "bg-watermelon/15 text-watermelon"
+                  ? "bg-flag-red/15 text-flag-red"
                   : "text-muted hover:bg-line/50 hover:text-ink"
               }`}
             >

@@ -3,9 +3,9 @@ import { AnimatePresence, motion } from "motion/react"
 import { notify_context, type notice, type notice_input } from "~/hooks/use-notify"
 
 const tone_accent: Record<notice["tone"], string> = {
-  success: "bg-royal-gold",
-  error: "bg-watermelon",
-  info: "bg-charcoal-blue",
+  success: "bg-light-green",
+  error: "bg-flag-red",
+  info: "bg-muted",
 }
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
@@ -41,7 +41,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
               exit={{ opacity: 0, y: 8, scale: 0.96 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               onClick={() => dismiss(item.id)}
-              className="pointer-events-auto flex cursor-pointer gap-2.5 rounded-xl border border-line bg-card/90 p-3 shadow-lg shadow-ink-black/10 backdrop-blur"
+              className="pointer-events-auto flex cursor-pointer gap-2.5 rounded-xl border border-line bg-card/90 p-3 shadow-lg shadow-carbon-black/10 backdrop-blur"
             >
               <span className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${tone_accent[item.tone]}`} />
               <div className="flex flex-col gap-0.5">

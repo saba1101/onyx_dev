@@ -44,7 +44,7 @@ const Login = () => {
       footer={
         <span>
           Need an account?{" "}
-          <Link to="/signup" className="font-medium text-watermelon hover:underline">
+          <Link to="/signup" className="font-medium text-flag-red hover:underline">
             Sign up
           </Link>
         </span>
@@ -59,7 +59,7 @@ const Login = () => {
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             role="alert"
-            className="rounded-lg bg-watermelon/10 px-3 py-2 text-xs text-watermelon"
+            className="rounded-lg bg-flag-red/10 px-3 py-2 text-xs text-flag-red"
           >
             {feedback.error}
           </motion.p>
@@ -69,7 +69,7 @@ const Login = () => {
           type="submit"
           disabled={sending}
           whileTap={{ scale: 0.98 }}
-          className="mt-1 rounded-lg bg-watermelon px-3 py-2 text-sm font-semibold text-mint-cream transition-opacity duration-200 hover:opacity-90 disabled:opacity-60"
+          className="mt-1 rounded-lg bg-flag-red px-3 py-2 text-sm font-semibold text-platinum transition-opacity duration-200 hover:opacity-90 disabled:opacity-60"
         >
           {sending ? "Signing in…" : "Sign in"}
         </motion.button>

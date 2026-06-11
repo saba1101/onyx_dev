@@ -19,8 +19,8 @@ export const Field = ({ name, label, type = "text", autoComplete, required, plac
       <motion.div
         animate={{
           boxShadow: active
-            ? "0 0 0 3px hsl(348 85% 54% / 0.16)"
-            : "0 0 0 0px hsl(348 85% 54% / 0)",
+            ? "0 0 0 3px hsl(355 81% 47% / 0.16)"
+            : "0 0 0 0px hsl(355 81% 47% / 0)",
         }}
         transition={{ duration: 0.2, ease: "easeOut" }}
         className="rounded-lg"
@@ -33,7 +33,7 @@ export const Field = ({ name, label, type = "text", autoComplete, required, plac
           placeholder={placeholder}
           onFocus={() => set_active(true)}
           onBlur={() => set_active(false)}
-          className="w-full rounded-lg border border-line bg-page/60 px-3 py-2 text-sm text-ink outline-none transition-colors duration-200 placeholder:text-muted/50 focus:border-watermelon"
+          className="w-full rounded-lg border border-line bg-page/60 px-3 py-2 text-sm text-ink outline-none transition-colors duration-200 placeholder:text-muted/50 focus:border-flag-red"
         />
       </motion.div>
     </label>

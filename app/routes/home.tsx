@@ -57,7 +57,7 @@ const Home = ({ loaderData }: Route.ComponentProps) => {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="max-w-md rounded-2xl border border-line bg-card/80 p-5 shadow-lg shadow-ink-black/5 backdrop-blur"
+          className="max-w-md rounded-2xl border border-line bg-card/80 p-5 shadow-lg shadow-carbon-black/5 backdrop-blur"
         >
           <p className="text-xs text-muted">Signed in as</p>
           <p className="mt-0.5 text-sm font-semibold text-ink">{loaderData.email}</p>

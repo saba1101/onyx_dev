@@ -13,7 +13,7 @@ export const SplashIntro = () => {
     <AnimatePresence>
       {show && (
         <motion.div
-          className="fixed inset-0 z-[100] grid place-items-center bg-ink-black"
+          className="fixed inset-0 z-[100] grid place-items-center bg-carbon-black"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4, ease: "easeInOut" }}
@@ -24,7 +24,7 @@ export const SplashIntro = () => {
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="text-5xl font-bold tracking-tight"
           >
-            <span className="text-mint-cream">onyx</span>
+            <span className="text-platinum">onyx</span>
             <span className="text-royal-gold"> dev</span>
             <Dots />
           </motion.span>
