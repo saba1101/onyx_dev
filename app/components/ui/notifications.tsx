@@ -30,15 +30,15 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   return (
     <notify_context.Provider value={push}>
       {children}
-      <div className="pointer-events-none fixed bottom-4 left-1/2 z-[120] flex w-full max-w-xs -translate-x-1/2 flex-col gap-2 sm:left-auto sm:right-4 sm:translate-x-0">
+      <div className="pointer-events-none fixed right-4 top-4 z-[120] flex w-full max-w-xs flex-col gap-2">
         <AnimatePresence initial={false}>
           {notices.map((item) => (
             <motion.div
               key={item.id}
               layout
-              initial={{ opacity: 0, y: 16, scale: 0.96 }}
+              initial={{ opacity: 0, y: -16, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.96 }}
+              exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               onClick={() => dismiss(item.id)}
               className="pointer-events-auto flex cursor-pointer gap-2.5 rounded-xl border border-line bg-card/90 p-3 shadow-lg shadow-carbon-black/10 backdrop-blur"

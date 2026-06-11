@@ -24,8 +24,8 @@ export const SplashIntro = () => {
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="text-5xl font-bold tracking-tight"
           >
-            <span className="text-platinum">onyx</span>
-            <span className="text-royal-gold"> dev</span>
+            <span className="text-platinum bg-flag-red p-4">onyx</span>
+            <span className="text-flag-red"> dev</span>
             <Dots />
           </motion.span>
         </motion.div>
@@ -35,7 +35,7 @@ export const SplashIntro = () => {
 }
 
 const Dots = () => (
-  <span className="inline-flex text-royal-gold">
+  <span className="inline-flex text-flag-red">
     {[0, 1, 2].map((slot) => (
       <motion.span
         key={slot}

@@ -16,14 +16,12 @@ export const AuthShell = ({ title, subtitle, children, footer }: auth_shell_prop
     transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     className="relative overflow-hidden rounded-xl border border-line bg-card"
   >
-    <span className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-flag-red via-royal-gold to-flag-red" />
 
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <LogoMark />
-          <span className="text-sm font-semibold">
-            onyx <span className="text-royal-gold">dev</span>
+          <span className="text-sm font-semibold">onyx<span className="text-flag-red">_dev</span>
           </span>
         </div>
         <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted">

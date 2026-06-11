@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { Form, useSearchParams } from "react-router"
 import { motion } from "motion/react"
 import type { Route } from "./+types/home"
@@ -19,10 +19,12 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 const Home = ({ loaderData }: Route.ComponentProps) => {
   const notify = use_notify()
   const [params, set_params] = useSearchParams()
+  const greeted = useRef(false)
 
   useEffect(() => {
     const welcome = params.get("welcome")
-    if (!welcome) return
+    if (!welcome || greeted.current) return
+    greeted.current = true
     notify({
       tone: "success",
       title: welcome === "up" ? "Account ready" : "Welcome back",
