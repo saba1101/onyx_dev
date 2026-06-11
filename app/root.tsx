@@ -9,9 +9,14 @@ import {
 
 import type { Route } from "./+types/root"
 import { ThemeToggle } from "~/components/ui/theme-toggle"
+import { SplashIntro } from "~/components/ui/splash-intro"
+import { NotificationProvider } from "~/components/ui/notifications"
 import "./app.css"
 
-export const links: Route.LinksFunction = () => []
+export const links: Route.LinksFunction = () => [
+  { rel: "icon", type: "image/png", href: "/onyx.png" },
+  { rel: "apple-touch-icon", href: "/onyx.png" },
+]
 
 const theme_setup = `(() => {
   const saved = localStorage.getItem("theme")
@@ -29,7 +34,8 @@ export const Layout = ({ children }: { children: React.ReactNode }) => (
       <script dangerouslySetInnerHTML={{ __html: theme_setup }} />
     </head>
     <body>
-      {children}
+      <SplashIntro />
+      <NotificationProvider>{children}</NotificationProvider>
       <ThemeToggle />
       <ScrollRestoration />
       <Scripts />
