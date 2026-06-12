@@ -33,8 +33,12 @@ export default {
     try {
       return await requestHandler(request, { cloudflare: { env, ctx } });
     } catch (error) {
+      const message = error instanceof Error ? `${error.message}\n\n${error.stack}` : String(error);
       console.error("[worker] unhandled error:", error);
-      throw error;
+      return new Response(`Internal Server Error\n\n${message}`, {
+        status: 500,
+        headers: { "Content-Type": "text/plain" },
+      });
     }
   },
 } satisfies ExportedHandler<Env>;
