@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import { Form, useSearchParams } from "react-router"
+import { useSearchParams } from "react-router"
 import { motion } from "motion/react"
 import type { Route } from "./+types/home"
 import { require_account } from "~/lib/auth.server"
@@ -44,15 +44,6 @@ const Home = ({ loaderData }: Route.ComponentProps) => {
             <p className="text-[11px] uppercase tracking-wide text-muted">Workspace</p>
             <h1 className="text-xl font-semibold tracking-tight">Onyx Dev</h1>
           </div>
-          <Form method="post" action="/logout">
-            <motion.button
-              type="submit"
-              whileTap={{ scale: 0.98 }}
-              className="rounded-lg border border-line bg-card px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:text-ink"
-            >
-              Sign out
-            </motion.button>
-          </Form>
         </header>
 
         <motion.section
