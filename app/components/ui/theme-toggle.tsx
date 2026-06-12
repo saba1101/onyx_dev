@@ -1,7 +1,10 @@
 import { use_theme } from "~/hooks/use-theme"
 
 export const ThemeToggle = () => {
-  const { theme, toggle } = use_theme()
+  const { theme, toggle, mounted } = use_theme()
+
+  if (!mounted) return null
+
   const is_dark = theme === "dark"
 
   return (

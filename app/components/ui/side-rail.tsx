@@ -13,9 +13,9 @@ export const SideRail = () => {
 
   const rail_items = [
     { to: "/", label: "Home", icon: GridIcon },
-    { to: "/", label: "Activity", icon: PulseIcon },
-    { to: "/", label: "Reports", icon: ChartIcon },
-    { to: "/", label: "Settings", icon: GearIcon },
+    // { to: "/", label: "Activity", icon: PulseIcon },
+    // { to: "/", label: "Reports", icon: ChartIcon },
+    { to: "/settings", label: "Settings", icon: GearIcon },
   ];
 
   return (
@@ -25,8 +25,11 @@ export const SideRail = () => {
       </div>
 
       <nav className="flex flex-1 flex-col items-center gap-1">
-        {rail_items.map((item, slot) => {
-          const active = slot === 0 && location.pathname === item.to;
+        {rail_items.map((item) => {
+          const active =
+            item.to === "/"
+              ? location.pathname === "/"
+              : location.pathname.startsWith(item.to);
           return (
             <Link
               key={item.label}

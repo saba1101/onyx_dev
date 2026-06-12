@@ -1,7 +1,27 @@
-import { useEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
 
+// useLayoutEffect on server causes a warning; this silences it while keeping
+// the synchronous-before-paint behaviour on the client.
+const use_layout_effect = typeof window !== "undefined" ? useLayoutEffect : useEffect
+
 export const SplashIntro = () => {
+  // Start as false (renders null) so server HTML and initial client render agree
+  // — no hydration mismatch. useLayoutEffect then enables the splash before
+  // the first paint if the user hasn't disabled it.
+  const [enabled, set_enabled] = useState(false)
+
+  use_layout_effect(() => {
+    if (!document.documentElement.hasAttribute("data-no-intro")) {
+      set_enabled(true)
+    }
+  }, [])
+
+  if (!enabled) return null
+  return <SplashContent />
+}
+
+const SplashContent = () => {
   const [show, set_show] = useState(true)
   const [count, set_count] = useState(0)
   const wordmark = "onyx dev"
@@ -9,7 +29,7 @@ export const SplashIntro = () => {
 
   useEffect(() => {
     if (count >= wordmark.length) return
-    const timer = setTimeout(() => set_count((current) => current + 1), 95)
+    const timer = setTimeout(() => set_count((c) => c + 1), 95)
     return () => clearTimeout(timer)
   }, [count])
 

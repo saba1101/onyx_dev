@@ -4,10 +4,17 @@ type Theme = "light" | "dark"
 
 export const use_theme = () => {
   const [theme, set_theme] = useState<Theme>("light")
+  const [mounted, set_mounted] = useState(false)
 
   useEffect(() => {
-    const is_dark = document.documentElement.classList.contains("dark")
-    set_theme(is_dark ? "dark" : "light")
+    const saved = localStorage.getItem("theme")
+    const is_dark = saved
+      ? saved === "dark"
+      : matchMedia("(prefers-color-scheme: dark)").matches
+    const resolved: Theme = is_dark ? "dark" : "light"
+    document.documentElement.classList.toggle("dark", is_dark)
+    set_theme(resolved)
+    set_mounted(true)
   }, [])
 
   const toggle = () => {
@@ -19,5 +26,5 @@ export const use_theme = () => {
     })
   }
 
-  return { theme, toggle }
+  return { theme, toggle, mounted }
 }
