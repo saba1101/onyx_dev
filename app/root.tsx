@@ -13,6 +13,7 @@ import { SplashIntro } from "~/components/ui/splash-intro"
 import { NotificationProvider } from "~/components/ui/notifications"
 import { Backdrop } from "~/components/ui/backdrop"
 import { AuthProvider } from "~/features/auth/lib/auth"
+import { ProfileProvider } from "~/features/profile/lib/profile-context"
 import "./app.css"
 
 export const links: Route.LinksFunction = () => [
@@ -51,7 +52,9 @@ export const Layout = ({ children }: { children: React.ReactNode }) => (
 
 const App = () => (
   <AuthProvider>
-    <Outlet />
+    <ProfileProvider>
+      <Outlet />
+    </ProfileProvider>
   </AuthProvider>
 )
 export default App

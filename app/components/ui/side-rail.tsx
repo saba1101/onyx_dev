@@ -1,4 +1,7 @@
 import { Form, Link, useLocation } from "react-router";
+import { useAuth } from "~/features/auth/lib/auth";
+import { useProfile } from "~/features/profile/lib/profile-context";
+import { AvatarUploader } from "~/features/profile/components/avatar-uploader";
 
 export const LogoMark = () => (
   <img
@@ -7,6 +10,41 @@ export const LogoMark = () => (
     className="h-7 w-7 rounded-lg object-contain"
   />
 );
+
+const UserCard = () => {
+  const { user } = useAuth();
+  const { profile } = useProfile();
+
+  if (!user) return null;
+
+  const display_name =
+    profile?.full_name || profile?.username || user.email?.split("@")[0] || "User";
+
+  return (
+    <div className="relative mb-3 rounded-xl border border-line bg-card/60 p-3">
+      <Link
+        to="/profile"
+        className="absolute right-2.5 top-2.5 text-[10px] font-light text-muted transition-colors hover:text-ink"
+      >
+        Edit profile
+      </Link>
+
+      <div className="mb-2.5">
+        <AvatarUploader url={profile?.avatar_url} editing={false} size="sm" />
+      </div>
+
+      <p className="truncate pr-14 text-xs font-semibold text-ink">{display_name}</p>
+      <p className="truncate text-[10px] text-muted">{user.email}</p>
+
+      {profile?.role && (
+        <span className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] text-light-green">
+          <span className="h-1.5 w-1.5 rounded-full bg-light-green" />
+          {profile.role}
+        </span>
+      )}
+    </div>
+  );
+};
 
 export const SideRail = () => {
   const location = useLocation();
@@ -17,10 +55,8 @@ export const SideRail = () => {
   ];
 
   return (
-    <aside className="flex w-52 shrink-0 flex-col gap-1 border-r border-line bg-card/60 px-3 py-5 backdrop-blur">
-
-      {/* Logo + wordmark */}
-      <div className="mb-5 flex items-center gap-2.5 px-2">
+    <aside className="flex w-52 shrink-0 flex-col gap-1 border-r border-line bg-card/20 px-3 py-5 backdrop-blur">
+      <div className="mb-4 flex items-center gap-2.5 px-2">
         <LogoMark />
         <span className="inline-flex items-center text-sm font-bold tracking-tight">
           <span className="bg-flag-red px-1.5 py-0.5 text-white">onyx</span>
@@ -28,7 +64,8 @@ export const SideRail = () => {
         </span>
       </div>
 
-      {/* Nav */}
+      <UserCard />
+
       <nav className="flex flex-1 flex-col gap-0.5">
         {rail_items.map((item) => {
           const active =
@@ -52,7 +89,6 @@ export const SideRail = () => {
         })}
       </nav>
 
-      {/* Sign out */}
       <Form method="post" action="/logout">
         <button
           type="submit"
