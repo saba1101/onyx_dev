@@ -2,9 +2,9 @@ import { Form, Link, Navigate, useActionData, useNavigation } from "react-router
 import { motion } from "motion/react"
 import type { Route } from "./+types/login"
 import { supabase } from "~/lib/supabase"
-import { useAuth } from "~/lib/auth"
-import { AuthShell } from "~/components/ui/auth-shell"
-import { Field } from "~/components/ui/field"
+import { useAuth } from "~/features/auth/lib/auth"
+import { AuthShell } from "~/features/auth/components/auth-shell"
+import { Field } from "~/features/auth/components/field"
 
 export const meta = () => [{ title: "Sign in — Onyx Dev" }]
 

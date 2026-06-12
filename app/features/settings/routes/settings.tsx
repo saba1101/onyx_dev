@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { Navigate } from "react-router"
 import { motion } from "motion/react"
-import { useAuth } from "~/lib/auth"
+import { useAuth } from "~/features/auth/lib/auth"
 import { SideRail } from "~/components/ui/side-rail"
 import { Toggle } from "~/components/ui/toggle"
 

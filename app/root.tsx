@@ -12,7 +12,7 @@ import { ThemeToggle } from "~/components/ui/theme-toggle"
 import { SplashIntro } from "~/components/ui/splash-intro"
 import { NotificationProvider } from "~/components/ui/notifications"
 import { Backdrop } from "~/components/ui/backdrop"
-import { AuthProvider } from "~/lib/auth"
+import { AuthProvider } from "~/features/auth/lib/auth"
 import "./app.css"
 
 export const links: Route.LinksFunction = () => [

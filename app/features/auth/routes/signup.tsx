@@ -3,9 +3,9 @@ import { Form, Link, Navigate, useActionData, useNavigation } from "react-router
 import { motion } from "motion/react"
 import type { Route } from "./+types/signup"
 import { supabase } from "~/lib/supabase"
-import { useAuth } from "~/lib/auth"
-import { AuthShell } from "~/components/ui/auth-shell"
-import { Field } from "~/components/ui/field"
+import { useAuth } from "~/features/auth/lib/auth"
+import { AuthShell } from "~/features/auth/components/auth-shell"
+import { Field } from "~/features/auth/components/field"
 import { use_notify } from "~/hooks/use-notify"
 
 export const meta = () => [{ title: "Sign up — Onyx Dev" }]

@@ -1,7 +1,7 @@
 import { Navigate } from "react-router"
 import type { Route } from "./+types/logout"
 import { supabase } from "~/lib/supabase"
-import { useAuth } from "~/lib/auth"
+import { useAuth } from "~/features/auth/lib/auth"
 
 export const clientAction = async (_: Route.ClientActionArgs) => {
   await supabase.auth.signOut()

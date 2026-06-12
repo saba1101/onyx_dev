@@ -1,6 +1,6 @@
 import { type ReactNode } from "react"
 import { motion } from "motion/react"
-import { LogoMark } from "./side-rail"
+import { LogoMark } from "~/components/ui/side-rail"
 
 type auth_shell_props = {
   title: string
