@@ -12,22 +12,29 @@ declare module "react-router" {
   }
 }
 
-const requestHandler = createRequestHandler(serverBuild, import.meta.env.MODE);
+declare global {
+  // eslint-disable-next-line no-var
+  var __cf_env: Env | undefined;
+}
 
 export interface Env {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
 }
 
+const requestHandler = createRequestHandler(serverBuild, import.meta.env.MODE);
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    // Cloudflare Workers don't auto-populate process.env from bindings,
-    // so we do it manually here before the request handler runs.
-    process.env.SUPABASE_URL = env.SUPABASE_URL;
-    process.env.SUPABASE_ANON_KEY = env.SUPABASE_ANON_KEY;
+    // Make Cloudflare bindings available to server-side modules (e.g. supabase.server.ts)
+    // that can't access the load context directly.
+    globalThis.__cf_env = env;
 
-    return requestHandler(request, {
-      cloudflare: { env, ctx },
-    });
+    try {
+      return await requestHandler(request, { cloudflare: { env, ctx } });
+    } catch (error) {
+      console.error("[worker] unhandled error:", error);
+      throw error;
+    }
   },
 } satisfies ExportedHandler<Env>;
