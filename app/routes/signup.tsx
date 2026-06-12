@@ -1,21 +1,16 @@
 import { useEffect } from "react"
-import { Form, Link, redirect, useActionData, useNavigation } from "react-router"
+import { Form, Link, Navigate, useActionData, useNavigation } from "react-router"
 import { motion } from "motion/react"
 import type { Route } from "./+types/signup"
-import { get_supabase } from "~/lib/supabase.server"
-import { block_when_signed_in } from "~/lib/auth.server"
+import { supabase } from "~/lib/supabase"
+import { useAuth } from "~/lib/auth"
 import { AuthShell } from "~/components/ui/auth-shell"
 import { Field } from "~/components/ui/field"
 import { use_notify } from "~/hooks/use-notify"
 
 export const meta = () => [{ title: "Sign up — Onyx Dev" }]
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await block_when_signed_in(request)
-  return null
-}
-
-export const action = async ({ request }: Route.ActionArgs) => {
+export const clientAction = async ({ request }: Route.ClientActionArgs) => {
   const form = await request.formData()
   const email = String(form.get("email") ?? "").trim()
   const password = String(form.get("password") ?? "")
@@ -28,26 +23,24 @@ export const action = async ({ request }: Route.ActionArgs) => {
     return { error: "Password must be at least 8 characters.", pending: null }
   }
 
-  const { supabase, headers } = get_supabase(request)
   const { data: created, error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { full_name } },
   })
 
-  if (error) {
-    return { error: error.message, pending: null }
-  }
+  if (error) return { error: error.message, pending: null }
 
   if (!created.session) {
     return { error: null, pending: "Account created. Check your email to confirm, then sign in." }
   }
 
-  return redirect("/?welcome=up", { headers })
+  return { error: null, pending: null }
 }
 
 const Signup = () => {
-  const feedback = useActionData<typeof action>()
+  const { user, loading } = useAuth()
+  const feedback = useActionData<typeof clientAction>()
   const navigation = useNavigation()
   const notify = use_notify()
   const sending = navigation.state === "submitting"
@@ -56,7 +49,10 @@ const Signup = () => {
     if (feedback?.pending) {
       notify({ tone: "info", title: "Almost there", message: feedback.pending })
     }
-  }, [feedback, notify])
+  }, [feedback])
+
+  if (loading) return null
+  if (user) return <Navigate to="/?welcome=up" replace />
 
   return (
     <AuthShell

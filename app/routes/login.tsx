@@ -1,19 +1,14 @@
-import { Form, Link, redirect, useActionData, useNavigation } from "react-router"
+import { Form, Link, Navigate, useActionData, useNavigation } from "react-router"
 import { motion } from "motion/react"
 import type { Route } from "./+types/login"
-import { get_supabase } from "~/lib/supabase.server"
-import { block_when_signed_in } from "~/lib/auth.server"
+import { supabase } from "~/lib/supabase"
+import { useAuth } from "~/lib/auth"
 import { AuthShell } from "~/components/ui/auth-shell"
 import { Field } from "~/components/ui/field"
 
 export const meta = () => [{ title: "Sign in — Onyx Dev" }]
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await block_when_signed_in(request)
-  return null
-}
-
-export const action = async ({ request }: Route.ActionArgs) => {
+export const clientAction = async ({ request }: Route.ClientActionArgs) => {
   const form = await request.formData()
   const email = String(form.get("email") ?? "").trim()
   const password = String(form.get("password") ?? "")
@@ -22,20 +17,20 @@ export const action = async ({ request }: Route.ActionArgs) => {
     return { error: "Email and password are required." }
   }
 
-  const { supabase, headers } = get_supabase(request)
   const { error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) return { error: error.message }
 
-  if (error) {
-    return { error: error.message }
-  }
-
-  return redirect("/?welcome=in", { headers })
+  return { error: null }
 }
 
 const Login = () => {
-  const feedback = useActionData<typeof action>()
+  const { user, loading } = useAuth()
+  const feedback = useActionData<typeof clientAction>()
   const navigation = useNavigation()
   const sending = navigation.state === "submitting"
+
+  if (loading) return null
+  if (user) return <Navigate to="/?welcome=in" replace />
 
   return (
     <AuthShell

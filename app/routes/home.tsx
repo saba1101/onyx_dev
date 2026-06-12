@@ -1,39 +1,38 @@
 import { useEffect, useRef } from "react"
-import { useSearchParams } from "react-router"
+import { Navigate, useSearchParams } from "react-router"
 import { motion } from "motion/react"
-import type { Route } from "./+types/home"
-import { require_account } from "~/lib/auth.server"
+import { useAuth } from "~/lib/auth"
 import { SideRail } from "~/components/ui/side-rail"
 import { use_notify } from "~/hooks/use-notify"
 
-export const meta = ({}: Route.MetaArgs) => [
+export const meta = () => [
   { title: "Onyx Dev" },
   { name: "description", content: "Onyx Dev" },
 ]
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  const { account } = await require_account(request)
-  return { email: account.email }
-}
-
-const Home = ({ loaderData }: Route.ComponentProps) => {
+const Home = () => {
+  const { user, loading } = useAuth()
   const notify = use_notify()
   const [params, set_params] = useSearchParams()
   const greeted = useRef(false)
 
   useEffect(() => {
+    if (!user) return
     const welcome = params.get("welcome")
     if (!welcome || greeted.current) return
     greeted.current = true
     notify({
       tone: "success",
       title: welcome === "up" ? "Account ready" : "Welcome back",
-      message: `Signed in as ${loaderData.email}`,
+      message: `Signed in as ${user.email}`,
     })
     const next = new URLSearchParams(params)
     next.delete("welcome")
     set_params(next, { replace: true })
-  }, [])
+  }, [user])
+
+  if (loading) return null
+  if (!user) return <Navigate to="/login" replace />
 
   return (
     <div className="flex min-h-screen">
@@ -53,7 +52,7 @@ const Home = ({ loaderData }: Route.ComponentProps) => {
           className="max-w-md rounded-2xl border border-line bg-card/80 p-5 shadow-lg shadow-carbon-black/5 backdrop-blur"
         >
           <p className="text-xs text-muted">Signed in as</p>
-          <p className="mt-0.5 text-sm font-semibold text-ink">{loaderData.email}</p>
+          <p className="mt-0.5 text-sm font-semibold text-ink">{user.email}</p>
         </motion.section>
       </main>
     </div>

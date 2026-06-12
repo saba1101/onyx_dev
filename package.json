@@ -5,13 +5,11 @@
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/index.js",
+    "preview": "vite preview --outDir build/client",
     "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
     "@react-router/node": "7.16.0",
-    "@react-router/serve": "7.16.0",
-    "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.1",
     "isbot": "^5.1.36",
     "motion": "^12.40.0",

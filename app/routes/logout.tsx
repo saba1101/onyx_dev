@@ -1,11 +1,18 @@
-import { redirect } from "react-router"
+import { Navigate } from "react-router"
 import type { Route } from "./+types/logout"
-import { get_supabase } from "~/lib/supabase.server"
+import { supabase } from "~/lib/supabase"
+import { useAuth } from "~/lib/auth"
 
-export const action = async ({ request }: Route.ActionArgs) => {
-  const { supabase, headers } = get_supabase(request)
+export const clientAction = async (_: Route.ClientActionArgs) => {
   await supabase.auth.signOut()
-  return redirect("/login", { headers })
+  return null
 }
 
-export const loader = () => redirect("/")
+const Logout = () => {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  if (!user) return <Navigate to="/login" replace />
+  return null
+}
+
+export default Logout

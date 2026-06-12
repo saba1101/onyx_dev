@@ -1,20 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react"
+import { Navigate } from "react-router"
 import { motion } from "motion/react"
-import type { Route } from "./+types/settings"
-import { require_account } from "~/lib/auth.server"
+import { useAuth } from "~/lib/auth"
 import { SideRail } from "~/components/ui/side-rail"
 import { Toggle } from "~/components/ui/toggle"
 
 export const meta = () => [{ title: "Settings — Onyx Dev" }]
 
-export const loader = async ({ request }: Route.LoaderArgs) => {
-  await require_account(request)
-  return null
-}
-
 const INTRO_KEY = "disable_intro"
 
 const Settings = () => {
+  const { user, loading } = useAuth()
   const [disable_intro, set_disable_intro] = useState(false)
 
   useEffect(() => {
@@ -28,13 +24,15 @@ const Settings = () => {
     } else {
       localStorage.removeItem(INTRO_KEY)
     }
-    // reflect change in DOM immediately for the inline-script check
     if (value) {
       document.documentElement.setAttribute("data-no-intro", "")
     } else {
       document.documentElement.removeAttribute("data-no-intro")
     }
   }
+
+  if (loading) return null
+  if (!user) return <Navigate to="/login" replace />
 
   return (
     <div className="flex min-h-screen">
@@ -92,6 +90,5 @@ const SettingRow = ({
     {children}
   </div>
 )
-
 
 export default Settings

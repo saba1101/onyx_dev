@@ -12,6 +12,7 @@ import { ThemeToggle } from "~/components/ui/theme-toggle"
 import { SplashIntro } from "~/components/ui/splash-intro"
 import { NotificationProvider } from "~/components/ui/notifications"
 import { Backdrop } from "~/components/ui/backdrop"
+import { AuthProvider } from "~/lib/auth"
 import "./app.css"
 
 export const links: Route.LinksFunction = () => [
@@ -48,7 +49,11 @@ export const Layout = ({ children }: { children: React.ReactNode }) => (
   </html>
 )
 
-const App = () => <Outlet />
+const App = () => (
+  <AuthProvider>
+    <Outlet />
+  </AuthProvider>
+)
 export default App
 
 export const ErrorBoundary = ({ error }: Route.ErrorBoundaryProps) => {
