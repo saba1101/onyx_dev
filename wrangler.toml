@@ -1,8 +1,0 @@
-name = "onyx-dev"
-compatibility_date = "2025-01-01"
-compatibility_flags = ["nodejs_compat"]
-main = "workers/app.ts"
-
-# Set SUPABASE_URL and SUPABASE_ANON_KEY as secrets in the Cloudflare dashboard
-# wrangler secret put SUPABASE_URL
-# wrangler secret put SUPABASE_ANON_KEY
