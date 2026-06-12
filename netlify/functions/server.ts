@@ -1,4 +1,4 @@
-import { createRequestHandler } from "@react-router/node";
+import { createRequestHandler } from "react-router";
 
 // @ts-expect-error - server build produced by `npm run build`
 import * as build from "../../build/server/index.js";
