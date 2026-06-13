@@ -4,12 +4,18 @@ export const AvatarUploader = ({
   url,
   editing,
   size = "lg",
+  accept = "image/jpeg,image/png,image/webp,image/gif",
   on_file_select,
+  validate,
+  on_reject,
 }: {
   url?: string | null
   editing: boolean
   size?: "sm" | "lg"
+  accept?: string
   on_file_select?: (file: File) => void
+  validate?: (file: File) => string | null
+  on_reject?: (message: string) => void
 }) => {
   const [preview, set_preview] = useState<string | null>(null)
   const preview_ref = useRef<string | null>(null)
@@ -27,14 +33,20 @@ export const AvatarUploader = ({
 
   const handle_file = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ""
     if (!file) return
+
+    const problem = validate?.(file)
+    if (problem) {
+      on_reject?.(problem)
+      return
+    }
 
     if (preview_ref.current) URL.revokeObjectURL(preview_ref.current)
     const obj_url = URL.createObjectURL(file)
     preview_ref.current = obj_url
     set_preview(obj_url)
     on_file_select?.(file)
-    e.target.value = ""
   }
 
   return (
@@ -60,7 +72,7 @@ export const AvatarUploader = ({
       <input
         ref={input_ref}
         type="file"
-        accept="image/*"
+        accept={accept}
         className="hidden"
         onChange={handle_file}
       />

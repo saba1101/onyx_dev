@@ -23,6 +23,16 @@
 }
 
 :root {
+  --gravel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='0.5'/%3E%3C/svg%3E");
+
+  --surface-bg: hsl(210 17% 99% / 0.55);
+  --surface-line: hsl(210 16% 86% / 0.85);
+  --surface-grain: 0.4;
+  --surface-shadow:
+    0 1px 2px hsl(210 14% 22% / 0.05),
+    0 10px 26px -14px hsl(210 14% 22% / 0.18),
+    inset 0 1px 0 hsl(0 0% 100% / 0.55);
+
   --backdrop-base: hsl(30 12% 97%);
   --backdrop-radial: radial-gradient(
     130% 90% at 50% -10%,
@@ -34,6 +44,14 @@
 }
 
 .dark {
+  --surface-bg: hsl(210 8% 15% / 0.5);
+  --surface-line: hsl(210 9% 24% / 0.85);
+  --surface-grain: 0.5;
+  --surface-shadow:
+    0 1px 2px hsl(0 0% 0% / 0.32),
+    0 14px 32px -16px hsl(0 0% 0% / 0.6),
+    inset 0 1px 0 hsl(0 0% 100% / 0.06);
+
   --color-page: var(--color-carbon-black);
   --color-card: hsl(210 8% 15%);
   --color-ink: var(--color-platinum);
@@ -54,4 +72,29 @@
 html,
 body {
   @apply text-ink font-sans font-normal;
+}
+
+@layer components {
+  .surface {
+    position: relative;
+    isolation: isolate;
+    border: 1px solid var(--surface-line);
+    background-color: var(--surface-bg);
+    box-shadow: var(--surface-shadow);
+    -webkit-backdrop-filter: blur(10px) saturate(1.08);
+    backdrop-filter: blur(10px) saturate(1.08);
+  }
+
+  .surface::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background-image: var(--gravel);
+    background-size: 160px 160px;
+    opacity: var(--surface-grain);
+    mix-blend-mode: overlay;
+    pointer-events: none;
+  }
 }

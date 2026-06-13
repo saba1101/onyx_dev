@@ -37,7 +37,7 @@ const Home = () => {
   return (
     <div className="flex min-h-screen">
       <SideRail />
-      <main className="flex flex-1 flex-col gap-6 p-6">
+      <main className="flex min-w-0 flex-1 flex-col gap-6 px-4 pb-12 pt-20 sm:px-6 lg:p-8">
         <header className="flex items-center justify-between">
           <div>
             <p className="text-[11px] uppercase tracking-wide text-muted">Workspace</p>
@@ -49,7 +49,7 @@ const Home = () => {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="max-w-md rounded-2xl border border-line bg-card/80 p-5 shadow-lg shadow-carbon-black/5 backdrop-blur"
+          className="surface max-w-md rounded-2xl p-5"
         >
           <p className="text-xs text-muted">Signed in as</p>
           <p className="mt-0.5 text-sm font-semibold text-ink">{user.email}</p>

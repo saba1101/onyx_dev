@@ -37,7 +37,7 @@ const Settings = () => {
   return (
     <div className="flex min-h-screen">
       <SideRail />
-      <main className="flex flex-1 flex-col gap-10 p-8">
+      <main className="flex min-w-0 flex-1 flex-col gap-8 px-4 pb-12 pt-20 sm:px-6 lg:gap-10 lg:p-8">
 
         <motion.header
           initial={{ opacity: 0, y: -8 }}
@@ -58,7 +58,7 @@ const Settings = () => {
             Appearance
           </p>
 
-          <div className="divide-y divide-line overflow-hidden rounded-2xl bg-card/80 shadow-sm shadow-carbon-black/5 backdrop-blur">
+          <div className="surface divide-y divide-line overflow-hidden rounded-2xl">
             <SettingRow
               label="Disable intro animation"
               description="Skip the typewriter animation on each page load"

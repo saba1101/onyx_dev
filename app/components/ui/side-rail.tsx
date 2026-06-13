@@ -1,17 +1,32 @@
+import { useEffect, useState } from "react";
 import { Form, Link, useLocation } from "react-router";
+import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "~/features/auth/lib/auth";
 import { useProfile } from "~/features/profile/lib/profile-context";
+import { status_tone } from "~/features/profile/lib/profile";
 import { AvatarUploader } from "~/features/profile/components/avatar-uploader";
+import { PencilIcon, MenuIcon, ChevronsLeftIcon } from "~/components/ui/icons";
+
+const COLLAPSE_KEY = "rail_collapsed";
+
+const read_collapsed = () =>
+  typeof window !== "undefined" && localStorage.getItem(COLLAPSE_KEY) === "true";
 
 export const LogoMark = () => (
-  <img
-    src="/onyx.png"
-    alt="Onyx"
-    className="h-7 w-7 rounded-lg object-contain"
-  />
+  <img src="/onyx.png" alt="Onyx" className="h-7 w-7 rounded-lg object-contain" />
 );
 
-const UserCard = () => {
+const Brand = ({ hidden }: { hidden: string }) => (
+  <Link to="/" className="flex items-center gap-2.5">
+    <LogoMark />
+    <span className={`inline-flex items-center text-sm font-bold tracking-tight ${hidden}`}>
+      <span className="bg-flag-red px-1.5 py-0.5 text-white">onyx</span>
+      <span className="text-flag-red">_dev</span>
+    </span>
+  </Link>
+);
+
+const UserCard = ({ collapsed }: { collapsed: boolean }) => {
   const { user } = useAuth();
   const { profile } = useProfile();
 
@@ -19,86 +34,169 @@ const UserCard = () => {
 
   const display_name =
     profile?.full_name || profile?.username || user.email?.split("@")[0] || "User";
+  const tone = status_tone[profile?.status ?? "active"];
+  const label_hidden = collapsed ? "lg:hidden" : "";
 
   return (
-    <div className="relative mb-3 rounded-xl border border-line bg-card/60 p-3">
+    <div
+      className={`surface relative mb-3 rounded-xl p-3 ${
+        collapsed ? "lg:flex lg:justify-center lg:p-2" : ""
+      }`}
+    >
       <Link
         to="/profile"
-        className="absolute right-2.5 top-2.5 text-[10px] font-light text-muted transition-colors hover:text-ink"
+        className={`absolute right-2.5 top-2.5 inline-flex items-center gap-1 text-[10px] font-light text-muted transition-colors hover:text-ink ${label_hidden}`}
       >
-        Edit profile
+        <PencilIcon size={10} />
+        Edit
       </Link>
 
-      <div className="mb-2.5">
+      <Link to="/profile" className={`relative block w-fit ${collapsed ? "" : "mb-2.5"}`}>
         <AvatarUploader url={profile?.avatar_url} editing={false} size="sm" />
+        <span
+          className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-card ${tone.dot}`}
+        />
+      </Link>
+
+      <div className={label_hidden}>
+        <p className="truncate pr-12 text-xs font-semibold text-ink">{display_name}</p>
+        <p className="truncate text-[10px] text-muted">{user.email}</p>
+        {profile?.role && (
+          <span className={`mt-1.5 inline-flex items-center gap-1.5 text-[10px] ${tone.text}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+            {profile.role} · {tone.label}
+          </span>
+        )}
       </div>
-
-      <p className="truncate pr-14 text-xs font-semibold text-ink">{display_name}</p>
-      <p className="truncate text-[10px] text-muted">{user.email}</p>
-
-      {profile?.role && (
-        <span className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] text-light-green">
-          <span className="h-1.5 w-1.5 rounded-full bg-light-green" />
-          {profile.role}
-        </span>
-      )}
     </div>
   );
 };
 
 export const SideRail = () => {
   const location = useLocation();
+  const [collapsed, set_collapsed] = useState(read_collapsed);
+  const [mobile_open, set_mobile_open] = useState(false);
+
+  useEffect(() => {
+    set_mobile_open(false);
+  }, [location.pathname]);
+
+  const toggle_collapsed = () => {
+    set_collapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem(COLLAPSE_KEY, String(next));
+      return next;
+    });
+  };
 
   const rail_items = [
     { to: "/", label: "Dashboard", icon: GridIcon },
     { to: "/settings", label: "Settings", icon: GearIcon },
   ];
 
+  const label_hidden = collapsed ? "lg:hidden" : "";
+  const center = collapsed ? "lg:justify-center lg:px-0" : "";
+
   return (
-    <aside className="flex w-52 shrink-0 flex-col gap-1 border-r border-line bg-card/20 px-3 py-5 backdrop-blur">
-      <div className="mb-4 flex items-center gap-2.5 px-2">
-        <LogoMark />
-        <span className="inline-flex items-center text-sm font-bold tracking-tight">
-          <span className="bg-flag-red px-1.5 py-0.5 text-white">onyx</span>
-          <span className="text-flag-red">_dev</span>
-        </span>
+    <>
+      <div className="fixed inset-x-0 top-0 z-30 flex items-center gap-3 border-b border-line bg-card/80 px-4 py-2.5 backdrop-blur lg:hidden">
+        <button
+          type="button"
+          onClick={() => set_mobile_open(true)}
+          aria-label="Open menu"
+          className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-line text-ink transition-colors hover:bg-line/50"
+        >
+          <MenuIcon size={18} />
+        </button>
+        <Brand hidden="" />
       </div>
 
-      <UserCard />
+      <AnimatePresence>
+        {mobile_open && (
+          <motion.button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => set_mobile_open(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-carbon-black/40 backdrop-blur-sm lg:hidden"
+          />
+        )}
+      </AnimatePresence>
 
-      <nav className="flex flex-1 flex-col gap-0.5">
-        {rail_items.map((item) => {
-          const active =
-            item.to === "/"
-              ? location.pathname === "/"
-              : location.pathname.startsWith(item.to);
-          return (
-            <Link
-              key={item.label}
-              to={item.to}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 ${
-                active
-                  ? "bg-flag-red/10 text-flag-red"
-                  : "text-muted hover:bg-line/50 hover:text-ink"
-              }`}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col gap-1 border-r border-line bg-card px-3 py-5 transition-[transform,width] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 lg:bg-card/20 lg:backdrop-blur ${
+          mobile_open ? "translate-x-0" : "-translate-x-full"
+        } ${collapsed ? "lg:w-[72px]" : "lg:w-52"}`}
+      >
+        <div className={`mb-4 flex items-center justify-between gap-2.5 px-2 ${center}`}>
+          <Brand hidden={label_hidden} />
+          <button
+            type="button"
+            onClick={toggle_collapsed}
+            aria-label="Collapse sidebar"
+            className={`hidden h-7 w-7 shrink-0 cursor-pointer place-items-center rounded-md text-muted transition-colors hover:bg-line/50 hover:text-ink lg:grid ${label_hidden}`}
+          >
+            <ChevronsLeftIcon size={16} />
+          </button>
+        </div>
+
+        <UserCard collapsed={collapsed} />
+
+        <nav className="flex flex-1 flex-col gap-0.5">
+          {rail_items.map((item) => {
+            const active =
+              item.to === "/"
+                ? location.pathname === "/"
+                : location.pathname.startsWith(item.to);
+            return (
+              <Link
+                key={item.label}
+                to={item.to}
+                title={item.label}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 ${center} ${
+                  active
+                    ? "bg-flag-red/10 text-flag-red"
+                    : "text-muted hover:bg-line/50 hover:text-ink"
+                }`}
+              >
+                <span className="shrink-0">
+                  <item.icon />
+                </span>
+                <span className={label_hidden}>{item.label}</span>
+              </Link>
+            );
+          })}
+
+          {collapsed && (
+            <button
+              type="button"
+              onClick={toggle_collapsed}
+              aria-label="Expand sidebar"
+              title="Expand"
+              className="hidden cursor-pointer place-items-center rounded-lg px-3 py-2 text-muted transition-colors hover:bg-line/50 hover:text-ink lg:grid"
             >
-              <item.icon />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+              <ChevronsLeftIcon size={16} className="rotate-180" />
+            </button>
+          )}
+        </nav>
 
-      <Form method="post" action="/logout">
-        <button
-          type="submit"
-          className="flex w-full cursor-pointer items-center gap-3 rounded-lg bg-flag-red px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-80"
-        >
-          <LogOutIcon />
-          Sign out
-        </button>
-      </Form>
-    </aside>
+        <Form method="post" action="/logout">
+          <button
+            type="submit"
+            title="Sign out"
+            className={`flex w-full cursor-pointer items-center gap-3 rounded-lg bg-flag-red px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-80 ${center}`}
+          >
+            <span className="shrink-0">
+              <LogOutIcon />
+            </span>
+            <span className={label_hidden}>Sign out</span>
+          </button>
+        </Form>
+      </aside>
+    </>
   );
 };
 
