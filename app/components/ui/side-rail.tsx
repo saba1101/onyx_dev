@@ -99,7 +99,7 @@ export const SideRail = () => {
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-30 flex items-center gap-3 border-b border-line bg-card/80 px-4 py-2.5 backdrop-blur lg:hidden">
+      <div className="fixed inset-x-0 top-0 z-30 flex items-center gap-3 border-b border-line bg-card/90 px-4 py-2.5 backdrop-blur-xl lg:hidden">
         <button
           type="button"
           onClick={() => set_mobile_open(true)}
@@ -127,7 +127,7 @@ export const SideRail = () => {
       </AnimatePresence>
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col gap-1 border-r border-line bg-card px-3 py-5 transition-[transform,width] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 lg:bg-card/20 lg:backdrop-blur ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col gap-1 border-r border-line bg-card px-3 py-5 transition-[transform,width] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 lg:bg-card/50 lg:backdrop-blur-xl ${
           mobile_open ? "translate-x-0" : "-translate-x-full"
         } ${collapsed ? "lg:w-[72px]" : "lg:w-52"}`}
       >
@@ -156,10 +156,10 @@ export const SideRail = () => {
                 key={item.label}
                 to={item.to}
                 title={item.label}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 ${center} ${
+                className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 ${center} ${
                   active
-                    ? "bg-flag-red/10 text-flag-red"
-                    : "text-muted hover:bg-line/50 hover:text-ink"
+                    ? "bg-flag-red/8 text-flag-red before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:rounded-full before:bg-flag-red"
+                    : "text-muted hover:bg-line/40 hover:text-ink"
                 }`}
               >
                 <span className="shrink-0">

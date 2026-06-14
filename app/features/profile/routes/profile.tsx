@@ -443,7 +443,7 @@ const MetaChip = ({ icon, label }: { icon: ReactNode; label: string }) => (
 )
 
 const StatCard = ({ icon, label, value }: { icon: ReactNode; label: string; value: string }) => (
-  <div className="surface rounded-xl px-4 py-3">
+  <div className="surface rounded-xl border-l-2 border-l-flag-red/25 px-4 py-3">
     <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-muted">
       {icon}
       {label}
@@ -454,7 +454,7 @@ const StatCard = ({ icon, label, value }: { icon: ReactNode; label: string; valu
 
 const SectionCard = ({ title, children }: { title: string; children: ReactNode }) => (
   <section className="surface rounded-2xl p-5">
-    <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted">{title}</p>
+    <p className="mb-3 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-muted before:h-px before:w-3 before:bg-flag-red/50 before:content-['']">{title}</p>
     <div className="flex flex-col gap-3">{children}</div>
   </section>
 )
@@ -471,7 +471,7 @@ const InfoRow = ({
   href?: string
 }) => (
   <div className="flex items-center gap-3">
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-line/40 text-muted">{icon}</span>
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-line/30 text-muted dark:bg-obsidian dark:text-muted">{icon}</span>
     <div className="min-w-0">
       <p className="text-[10px] font-medium uppercase tracking-wide text-muted">{label}</p>
       {href && value ? (
@@ -492,7 +492,7 @@ const SocialLink = ({ icon, label, href }: { icon: ReactNode; label: string; hre
       href={with_protocol(href)}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center gap-2 rounded-lg border border-line bg-page/40 px-3 py-2 text-xs font-medium text-ink transition-colors hover:bg-line/50"
+      className="inline-flex items-center gap-2 rounded-lg border border-line bg-line/20 px-3 py-2 text-xs font-medium text-ink transition-colors hover:bg-line/40 dark:bg-obsidian dark:hover:bg-white/5"
     >
       {icon}
       {label}
@@ -502,7 +502,7 @@ const SocialLink = ({ icon, label, href }: { icon: ReactNode; label: string; hre
 
 const EditCard = ({ title, children }: { title: string; children: ReactNode }) => (
   <div className="surface rounded-2xl p-5">
-    <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-muted">{title}</p>
+    <p className="mb-4 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-muted before:h-px before:w-3 before:bg-flag-red/50 before:content-['']">{title}</p>
     <div className="flex flex-col gap-4">{children}</div>
   </div>
 )

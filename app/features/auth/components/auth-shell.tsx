@@ -14,14 +14,23 @@ export const AuthShell = ({ title, subtitle, children, footer }: auth_shell_prop
     initial={{ opacity: 0, y: 24 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-    className="relative overflow-hidden rounded-xl border border-line bg-card"
+    className="surface relative w-full max-w-sm overflow-hidden rounded-2xl"
   >
+    {/* Red accent stripe */}
+    <div className="h-px bg-gradient-to-r from-transparent via-flag-red to-transparent opacity-75" />
 
-    <div className="p-6">
+    {/* Corner brackets */}
+    <span aria-hidden className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 border-l-2 border-t-2 border-flag-red/30" />
+    <span aria-hidden className="pointer-events-none absolute right-3.5 top-3.5 h-4 w-4 border-r-2 border-t-2 border-flag-red/30" />
+    <span aria-hidden className="pointer-events-none absolute bottom-3.5 left-3.5 h-4 w-4 border-b-2 border-l-2 border-flag-red/30" />
+    <span aria-hidden className="pointer-events-none absolute bottom-3.5 right-3.5 h-4 w-4 border-b-2 border-r-2 border-flag-red/30" />
+
+    <div className="p-6 pt-5">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <LogoMark />
-          <span className="text-sm font-semibold">onyx<span className="text-flag-red">_dev</span>
+          <span className="text-sm font-semibold">
+            onyx<span className="text-flag-red">_dev</span>
           </span>
         </div>
         <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted">

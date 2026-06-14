@@ -11,6 +11,7 @@
   --color-royal-gold: hsl(49 93% 67%);
   --color-light-green: hsl(113 63% 66%);
   --color-carbon-black: hsl(210 7% 11%);
+  --color-obsidian: hsl(220 12% 6%);
   --color-platinum: hsl(210 17% 95%);
 
   --color-page: var(--color-platinum);
@@ -25,13 +26,13 @@
 :root {
   --gravel: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='0.5'/%3E%3C/svg%3E");
 
-  --surface-bg: hsl(210 17% 99% / 0.55);
-  --surface-line: hsl(210 16% 86% / 0.85);
-  --surface-grain: 0.4;
+  --surface-bg: hsl(0 0% 100% / 0.72);
+  --surface-line: hsl(210 16% 76% / 0.90);
+  --surface-grain: 0.5;
   --surface-shadow:
-    0 1px 2px hsl(210 14% 22% / 0.05),
-    0 10px 26px -14px hsl(210 14% 22% / 0.18),
-    inset 0 1px 0 hsl(0 0% 100% / 0.55);
+    0 1px 3px hsl(210 14% 22% / 0.07),
+    0 8px 28px -8px hsl(210 14% 22% / 0.22),
+    inset 0 1px 0 hsl(0 0% 100% / 0.85);
 
   --backdrop-base: hsl(30 12% 97%);
   --backdrop-radial: radial-gradient(
@@ -44,19 +45,20 @@
 }
 
 .dark {
-  --surface-bg: hsl(210 8% 15% / 0.5);
-  --surface-line: hsl(210 9% 24% / 0.85);
-  --surface-grain: 0.5;
+  --surface-bg: hsl(220 12% 7% / 0.90);
+  --surface-line: hsl(220 10% 18% / 1.0);
+  --surface-grain: 0.65;
   --surface-shadow:
-    0 1px 2px hsl(0 0% 0% / 0.32),
-    0 14px 32px -16px hsl(0 0% 0% / 0.6),
-    inset 0 1px 0 hsl(0 0% 100% / 0.06);
+    0 0 0 1px hsl(220 10% 16% / 0.90),
+    0 2px 6px hsl(0 0% 0% / 0.55),
+    0 20px 50px -16px hsl(0 0% 0% / 0.82),
+    inset 0 1px 0 hsl(0 0% 100% / 0.045);
 
   --color-page: var(--color-carbon-black);
-  --color-card: hsl(210 8% 15%);
+  --color-card: hsl(220 12% 8%);
   --color-ink: var(--color-platinum);
-  --color-muted: hsl(210 8% 62%);
-  --color-line: hsl(210 9% 22%);
+  --color-muted: hsl(210 8% 58%);
+  --color-line: hsl(220 10% 18%);
   --color-primary: var(--color-flag-red);
   --color-accent: var(--color-royal-gold);
   --backdrop-base: #16100e;
@@ -66,7 +68,7 @@
     #1c1513 48%,
     #130d0c 100%
   );
-  --grain-opacity: 0.45;
+  --grain-opacity: 0.55;
 }
 
 html,
@@ -81,8 +83,8 @@ body {
     border: 1px solid var(--surface-line);
     background-color: var(--surface-bg);
     box-shadow: var(--surface-shadow);
-    -webkit-backdrop-filter: blur(10px) saturate(1.08);
-    backdrop-filter: blur(10px) saturate(1.08);
+    -webkit-backdrop-filter: blur(20px) saturate(1.14);
+    backdrop-filter: blur(20px) saturate(1.14);
   }
 
   .surface::after {
