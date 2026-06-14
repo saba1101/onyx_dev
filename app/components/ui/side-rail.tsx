@@ -5,7 +5,7 @@ import { useAuth } from "~/features/auth/lib/auth";
 import { useProfile } from "~/features/profile/lib/profile-context";
 import { status_tone } from "~/features/profile/lib/profile";
 import { AvatarUploader } from "~/features/profile/components/avatar-uploader";
-import { PencilIcon, MenuIcon, ChevronsLeftIcon, UsersIcon } from "~/components/ui/icons";
+import { PencilIcon, MenuIcon, ChevronsLeftIcon, UsersIcon, GitBranchIcon } from "~/components/ui/icons";
 
 const COLLAPSE_KEY = "rail_collapsed";
 
@@ -93,6 +93,7 @@ export const SideRail = () => {
   const rail_items = [
     { to: "/",        label: "Dashboard", icon: GridIcon  },
     { to: "/users", label: profile?.role === "root" ? "Users" : "Team", icon: UsersIcon },
+    { to: "/git",      label: "Git",      icon: GitBranchIcon },
     { to: "/settings", label: "Settings", icon: GearIcon  },
   ];
 
@@ -128,10 +129,17 @@ export const SideRail = () => {
         )}
       </AnimatePresence>
 
+      <div
+        aria-hidden="true"
+        className={`hidden shrink-0 transition-[width] duration-300 ease-out lg:block ${
+          collapsed ? "w-[72px]" : "w-52"
+        }`}
+      />
+
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col gap-1 border-r border-line bg-card px-3 py-5 transition-[transform,width] duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 lg:bg-card/50 lg:backdrop-blur-xl ${
-          mobile_open ? "translate-x-0" : "-translate-x-full"
-        } ${collapsed ? "lg:w-[72px]" : "lg:w-52"}`}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col gap-1 border-r border-line bg-card px-3 py-5 transition-[transform,width] duration-300 ease-out lg:bg-card/50 lg:backdrop-blur-xl ${
+          mobile_open ? "translate-x-0 w-64" : "-translate-x-full w-64"
+        } lg:translate-x-0 ${collapsed ? "lg:w-[72px]" : "lg:w-52"}`}
       >
         <div className={`mb-4 flex items-center justify-between gap-2.5 px-2 ${center}`}>
           <Brand hidden={label_hidden} />

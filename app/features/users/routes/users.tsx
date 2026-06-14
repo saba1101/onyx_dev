@@ -629,20 +629,20 @@ const TeamView = () => {
   return (
     <div className="flex min-h-screen">
       <SideRail />
-      <main className="flex min-w-0 flex-1 flex-col gap-6 px-4 pb-12 pt-20 sm:px-6 lg:gap-8 lg:p-8">
+      <main className="relative flex min-w-0 flex-1 flex-col gap-4 px-4 pb-12 pt-20 sm:px-6 lg:gap-5 lg:px-8 lg:pb-8 lg:pt-12">
 
         <motion.header
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-wrap items-end justify-between gap-4"
+          className="flex flex-wrap items-center justify-between gap-3 lg:absolute lg:inset-x-8 lg:top-2 lg:z-10"
         >
-          <div>
-            <p className="text-[11px] uppercase tracking-widest text-flag-red">// team</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight">Team</h1>
-            <p className="mt-1 text-xs text-muted">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
+            <h1 className="text-sm font-semibold tracking-tight text-ink">Team</h1>
+            <span className="text-[11px] text-muted">
               {fetching ? "Loading…" : `${profiles.length} member${profiles.length !== 1 ? "s" : ""}`}
-            </p>
+            </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -785,20 +785,20 @@ const Users = () => {
     <div className="flex min-h-screen">
       <SideRail />
 
-      <main className="flex min-w-0 flex-1 flex-col gap-6 px-4 pb-12 pt-20 sm:px-6 lg:gap-8 lg:p-8">
+      <main className="relative flex min-w-0 flex-1 flex-col gap-4 px-4 pb-12 pt-20 sm:px-6 lg:gap-5 lg:px-8 lg:pb-8 lg:pt-12">
 
         <motion.header
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-wrap items-end justify-between gap-4"
+          className="flex flex-wrap items-center justify-between gap-3 lg:absolute lg:inset-x-8 lg:top-2 lg:z-10"
         >
-          <div>
-            <p className="text-[11px] uppercase tracking-widest text-flag-red">// users</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight">Users</h1>
-            <p className="mt-1 text-xs text-muted">
-              {fetching ? "Loading…" : `${users.length} registered user${users.length !== 1 ? "s" : ""}`}
-            </p>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
+            <h1 className="text-sm font-semibold tracking-tight text-ink">Users</h1>
+            <span className="text-[11px] text-muted">
+              {fetching ? "Loading…" : `${users.length} registered`}
+            </span>
           </div>
 
           {/* Controls */}

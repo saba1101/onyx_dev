@@ -37,16 +37,17 @@ const Settings = () => {
   return (
     <div className="flex min-h-screen">
       <SideRail />
-      <main className="flex min-w-0 flex-1 flex-col gap-8 px-4 pb-12 pt-20 sm:px-6 lg:gap-10 lg:p-8">
+      <main className="relative flex min-w-0 flex-1 flex-col gap-4 px-4 pb-12 pt-20 sm:px-6 lg:gap-5 lg:px-8 lg:pb-8 lg:pt-12">
 
         <motion.header
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="flex items-center gap-2 lg:absolute lg:inset-x-8 lg:top-2 lg:z-10"
         >
-          <p className="text-[11px] uppercase tracking-widest text-flag-red">// config</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Settings</h1>
-          <p className="mt-1 text-xs text-muted">Manage your workspace preferences</p>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
+          <h1 className="text-sm font-semibold tracking-tight text-ink">Settings</h1>
+          <span className="text-[11px] text-muted">Workspace preferences</span>
         </motion.header>
 
         <motion.section

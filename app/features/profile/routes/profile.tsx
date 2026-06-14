@@ -207,22 +207,22 @@ const Profile = () => {
   return (
     <div className="flex min-h-screen">
       <SideRail />
-      <main className="flex min-w-0 flex-1 flex-col gap-6 px-4 pb-12 pt-20 sm:px-6 lg:gap-8 lg:p-8">
+      <main className="relative flex min-w-0 flex-1 flex-col gap-4 px-4 pb-12 pt-20 sm:px-6 lg:gap-5 lg:px-8 lg:pb-8 lg:pt-12">
 
         <motion.header
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: ease_out }}
-          className="flex items-start justify-between"
+          className="flex items-center justify-between gap-4 lg:absolute lg:inset-x-8 lg:top-2 lg:z-10"
         >
-          <div>
-            <p className="text-[11px] uppercase tracking-widest text-flag-red">// profile</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
+            <h1 className="text-sm font-semibold tracking-tight text-ink">
               {editing ? "Edit Profile" : "Profile"}
             </h1>
-            <p className="mt-1 text-xs text-muted">
+            <span className="hidden text-[11px] text-muted sm:block">
               {editing ? "Update your account information" : "Your account information"}
-            </p>
+            </span>
           </div>
 
           {!editing && (

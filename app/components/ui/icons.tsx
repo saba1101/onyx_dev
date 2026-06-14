@@ -167,3 +167,85 @@ export const BanIcon = make_stroke(
 export const LinkedinIcon = make_solid(
   "M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z",
 )
+
+export const StarIcon = make_stroke(<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />)
+
+export const GitForkIcon = make_stroke(
+  <>
+    <circle cx="6" cy="6" r="2" />
+    <circle cx="18" cy="6" r="2" />
+    <circle cx="12" cy="18" r="2" />
+    <path d="M6 8v2a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V8" />
+    <path d="M12 14v-2" />
+  </>,
+)
+
+export const GitBranchIcon = make_stroke(
+  <>
+    <line x1="6" y1="3" x2="6" y2="15" />
+    <circle cx="18" cy="6" r="3" />
+    <circle cx="6" cy="18" r="3" />
+    <path d="M18 9a9 9 0 0 1-9 9" />
+  </>,
+)
+
+export const ExternalLinkIcon = make_stroke(
+  <>
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    <polyline points="15 3 21 3 21 9" />
+    <line x1="10" y1="14" x2="21" y2="3" />
+  </>,
+)
+
+export const BookIcon = make_stroke(
+  <>
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+  </>,
+)
+
+export const ActivityIcon = make_stroke(<polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />)
+
+export const UploadIcon = make_stroke(
+  <>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </>,
+)
+
+export const GitMergeIcon = make_stroke(
+  <>
+    <circle cx="18" cy="18" r="2" />
+    <circle cx="6" cy="6" r="2" />
+    <path d="M6 8v4a4 4 0 0 0 4 4h4" />
+    <line x1="18" y1="8" x2="18" y2="16" />
+    <circle cx="18" cy="6" r="2" />
+  </>,
+)
+
+export const CircleDotIcon = make_stroke(
+  <>
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="3" />
+  </>,
+)
+
+export const TagIcon = make_stroke(
+  <>
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+    <line x1="7" y1="7" x2="7.01" y2="7" />
+  </>,
+)
+
+export const MessageSquareIcon = make_stroke(
+  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
+)
+
+export const PlusCircleIcon = make_stroke(
+  <>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="8" x2="12" y2="16" />
+    <line x1="8" y1="12" x2="16" y2="12" />
+  </>,
+)

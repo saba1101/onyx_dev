@@ -37,12 +37,10 @@ const Home = () => {
   return (
     <div className="flex min-h-screen">
       <SideRail />
-      <main className="flex min-w-0 flex-1 flex-col gap-6 px-4 pb-12 pt-20 sm:px-6 lg:p-8">
-        <header className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-muted">Workspace</p>
-            <h1 className="text-xl font-semibold tracking-tight">Onyx Dev</h1>
-          </div>
+      <main className="relative flex min-w-0 flex-1 flex-col gap-4 px-4 pb-12 pt-20 sm:px-6 lg:gap-5 lg:px-8 lg:pb-8 lg:pt-12">
+        <header className="flex items-center gap-2 lg:absolute lg:inset-x-8 lg:top-2 lg:z-10">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
+          <h1 className="text-sm font-semibold tracking-tight text-ink">Dashboard</h1>
         </header>
 
         <motion.section
