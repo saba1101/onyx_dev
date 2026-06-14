@@ -38,6 +38,7 @@ export type GHRepo = {
   created_at:        string
   fork:              boolean
   private:           boolean
+  archived:          boolean
   default_branch:    string
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, type ReactNode } from "react"
+import { useEffect, useRef, useState, useMemo, type ReactNode } from "react"
 import { Navigate } from "react-router"
 import { motion, AnimatePresence } from "motion/react"
 import {
@@ -18,6 +18,7 @@ import {
   ActivityIcon, GitBranchIcon, CheckIcon, TrashIcon,
   UploadIcon, GitMergeIcon, CircleDotIcon, TagIcon,
   MessageSquareIcon, PlusCircleIcon,
+  UserIcon, FileTextIcon, ArchiveIcon, AlertCircleIcon, CodeIcon,
 } from "~/components/ui/icons"
 import { supabase } from "~/lib/supabase"
 import {
@@ -73,7 +74,7 @@ const CT = ({ active, payload, label }: {
 // ─── Stat card ───────────────────────────────────────────────────────────────
 
 const Stat = ({ icon, label, value }: { icon: ReactNode; label: string; value: string | number }) => (
-  <div className="surface flex min-w-[120px] flex-1 flex-col gap-2 rounded-2xl p-4">
+  <div className="surface flex flex-col gap-2 rounded-2xl p-4">
     <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-flag-red/10 text-flag-red">{icon}</span>
     <p className="text-2xl font-bold tracking-tight text-ink">{value}</p>
     <p className="text-[10px] uppercase tracking-widest text-muted">{label}</p>
@@ -370,23 +371,85 @@ const ActivityFeed = ({ events }: { events: GHEvent[] }) => {
   )
 }
 
+// ─── Topics cloud ────────────────────────────────────────────────────────────
+
+const TopicsCloud = ({ repos }: { repos: GHRepo[] }) => {
+  const freq = new Map<string, number>()
+  for (const r of repos)
+    for (const t of r.topics)
+      freq.set(t, (freq.get(t) ?? 0) + 1)
+
+  const sorted = [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 50)
+  if (sorted.length === 0) return null
+  const max = sorted[0][1]
+
+  return (
+    <div className="surface rounded-2xl p-5">
+      <SH>Topics</SH>
+      <div className="flex flex-wrap gap-2">
+        {sorted.map(([topic, count]) => {
+          const w = count / max
+          const cls = w === 1
+            ? "bg-flag-red text-white text-xs font-semibold px-3 py-1"
+            : w >= 0.5
+            ? "bg-flag-red/12 text-flag-red text-xs font-medium px-2.5 py-0.5"
+            : "bg-line/50 text-muted text-[11px] font-medium px-2 py-0.5"
+          return (
+            <span key={topic} className={`inline-flex items-center gap-1.5 rounded-full ${cls}`}>
+              {topic}
+              {count > 1 && <span className="text-[9px] opacity-60 tabular-nums">{count}</span>}
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Repo breakdown ───────────────────────────────────────────────────────────
+
+const BreakdownPill = ({
+  icon, label, value, accent,
+}: { icon: ReactNode; label: string; value: string | number; accent?: boolean }) => (
+  <div className="flex items-center gap-2.5">
+    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${accent ? "bg-flag-red/10 text-flag-red" : "bg-line/50 text-muted"}`}>
+      {icon}
+    </span>
+    <div>
+      <p className={`text-sm font-bold tabular-nums leading-none ${accent ? "text-flag-red" : "text-ink"}`}>{value}</p>
+      <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted">{label}</p>
+    </div>
+  </div>
+)
+
 // ─── Overview tab ────────────────────────────────────────────────────────────
 
 const OverviewTab = ({ data }: { data: GitData }) => {
   const { gh_user: u, repos, languages } = data
-  const total_stars = repos.reduce((s, r) => s + r.stargazers_count, 0)
-  const total_forks = repos.reduce((s, r) => s + r.forks_count, 0)
 
-  const top_langs = Object.entries(languages)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 8)
-  const total_bytes = top_langs.reduce((s, [, v]) => s + v, 0)
-  const lang_pie = top_langs.map(([name, bytes]) => ({ name, bytes, pct: bytes / total_bytes }))
+  const {
+    total_stars, total_forks, total_issues, total_size,
+    n_original, n_fork, n_private, n_archived,
+  } = useMemo(() => ({
+    total_stars:  repos.reduce((s, r) => s + r.stargazers_count, 0),
+    total_forks:  repos.reduce((s, r) => s + r.forks_count, 0),
+    total_issues: repos.reduce((s, r) => s + r.open_issues_count, 0),
+    total_size:   repos.reduce((s, r) => s + r.size, 0),
+    n_original:   repos.filter(r => !r.fork).length,
+    n_fork:       repos.filter(r => r.fork).length,
+    n_private:    repos.filter(r => r.private).length,
+    n_archived:   repos.filter(r => r.archived).length,
+  }), [repos])
 
-  const top_repos = [...repos]
-    .filter(r => !r.fork)
-    .sort((a, b) => b.stargazers_count - a.stargazers_count)
-    .slice(0, 5)
+  const lang_pie = useMemo(() => {
+    const top = Object.entries(languages).sort(([, a], [, b]) => b - a).slice(0, 8)
+    const total = top.reduce((s, [, v]) => s + v, 0)
+    return top.map(([name, bytes]) => ({ name, bytes, pct: bytes / total }))
+  }, [languages])
+
+  const top_repos = useMemo(() =>
+    [...repos].filter(r => !r.fork).sort((a, b) => b.stargazers_count - a.stargazers_count).slice(0, 5)
+  , [repos])
 
   return (
     <div className="space-y-5">
@@ -442,11 +505,23 @@ const OverviewTab = ({ data }: { data: GitData }) => {
       </div>
 
       {/* Stats */}
-      <div className="flex flex-wrap gap-3">
-        <Stat icon={<BookIcon size={15} />}    label="Repositories" value={u.public_repos} />
-        <Stat icon={<StarIcon size={15} />}    label="Total stars"  value={fmt_num(total_stars)} />
-        <Stat icon={<GitForkIcon size={15} />} label="Total forks"  value={fmt_num(total_forks)} />
-        <Stat icon={<UsersIcon size={15} />}   label="Followers"    value={fmt_num(u.followers)} />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        <Stat icon={<BookIcon size={15} />}     label="Repositories" value={u.public_repos} />
+        <Stat icon={<StarIcon size={15} />}     label="Total stars"  value={fmt_num(total_stars)} />
+        <Stat icon={<GitForkIcon size={15} />}  label="Total forks"  value={fmt_num(total_forks)} />
+        <Stat icon={<UsersIcon size={15} />}    label="Followers"    value={fmt_num(u.followers)} />
+        <Stat icon={<UserIcon size={15} />}     label="Following"    value={fmt_num(u.following)} />
+        <Stat icon={<FileTextIcon size={15} />} label="Gists"        value={u.public_gists} />
+      </div>
+
+      {/* Repo breakdown */}
+      <div className="surface grid grid-cols-2 gap-4 rounded-2xl px-5 py-4 sm:grid-cols-3 lg:grid-cols-6">
+        <BreakdownPill icon={<BookIcon size={13} />}        label="Original"    value={n_original} />
+        <BreakdownPill icon={<GitForkIcon size={13} />}     label="Forked"      value={n_fork} />
+        <BreakdownPill icon={<CodeIcon size={13} />}        label="Private"     value={n_private} />
+        <BreakdownPill icon={<ArchiveIcon size={13} />}     label="Archived"    value={n_archived} />
+        <BreakdownPill icon={<AlertCircleIcon size={13} />} label="Open issues" value={total_issues} accent />
+        <BreakdownPill icon={<ActivityIcon size={13} />}    label="Code"        value={fmt_bytes(total_size * 1024)} />
       </div>
 
       {/* Language donut + top repos */}
@@ -519,6 +594,9 @@ const OverviewTab = ({ data }: { data: GitData }) => {
           </div>
         </div>
       </div>
+
+      {/* Topics cloud */}
+      <TopicsCloud repos={repos} />
     </div>
   )
 }
@@ -627,11 +705,18 @@ const ReposTab = ({ repos }: { repos: GHRepo[] }) => {
 // ─── Languages tab ───────────────────────────────────────────────────────────
 
 const LanguagesTab = ({ languages }: { languages: LangMap }) => {
-  const entries = Object.entries(languages).sort(([, a], [, b]) => b - a)
-  const total   = entries.reduce((s, [, v]) => s + v, 0)
-  const top10   = entries.slice(0, 10)
-  const pie     = top10.map(([name, bytes]) => ({ name, bytes }))
-  const bar     = top10.map(([name, bytes]) => ({ name, bytes, pct: ((bytes / total) * 100).toFixed(1) }))
+  const { entries, total, top10, pie, bar } = useMemo(() => {
+    const entries = Object.entries(languages).sort(([, a], [, b]) => b - a)
+    const total   = entries.reduce((s, [, v]) => s + v, 0)
+    const top10   = entries.slice(0, 10)
+    return {
+      entries,
+      total,
+      top10,
+      pie: top10.map(([name, bytes]) => ({ name, bytes })),
+      bar: top10.map(([name, bytes]) => ({ name, bytes, pct: ((bytes / total) * 100).toFixed(1) })),
+    }
+  }, [languages])
 
   if (entries.length === 0) {
     return (
@@ -747,8 +832,10 @@ const LanguagesTab = ({ languages }: { languages: LangMap }) => {
 
 const ActivityTab = ({ data }: { data: GitData }) => {
   const { weekly, commit_days, events, repos } = data
-  const total_commits = weekly.reduce((s, w) => s + w.commits, 0)
-  const peak = Math.max(...weekly.map(w => w.commits), 1)
+  const { total_commits, peak } = useMemo(() => ({
+    total_commits: weekly.reduce((s, w) => s + w.commits, 0),
+    peak: Math.max(...weekly.map(w => w.commits), 1),
+  }), [weekly])
 
   return (
     <div className="space-y-5">
@@ -927,6 +1014,16 @@ const Git = () => {
   const [connecting,   set_connecting] = useState(false)
   const [auth_trigger, set_trigger]    = useState(0)
 
+  // Always-current state reference — lets the load effect read phase without
+  // adding `state` to its deps (which would cause an infinite loop).
+  const state_ref   = useRef(state)
+  state_ref.current = state
+
+  // Tracks the last auth_trigger value the effect actually ran with, so we can
+  // distinguish "a new OAuth flow just completed" from "supabase-js fired
+  // SIGNED_IN during a silent session restore / tab-return token refresh".
+  const prev_trigger = useRef(0)
+
   const has_github = !!(user?.identities?.some(i => i.provider === "github"))
 
   // Strip OAuth error params from URL so they don't persist on reload
@@ -941,17 +1038,33 @@ const Git = () => {
     }
   }, [])
 
-  // Re-trigger load whenever a fresh provider_token lands in the session
-  // (fires after GitHub OAuth redirect completes)
+  // Increment auth_trigger only when we receive a genuinely new provider_token
+  // from GitHub OAuth. supabase-js can fire SIGNED_IN during silent token
+  // refreshes on tab-return, so we guard against that by only reacting when
+  // the token string itself changed from what we last loaded with.
+  const last_provider_token = useRef<string | null>(null)
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.provider_token) set_trigger(n => n + 1)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (
+        event === "SIGNED_IN" &&
+        session?.provider_token &&
+        session.provider_token !== last_provider_token.current
+      ) {
+        set_trigger(n => n + 1)
+      }
     })
     return () => subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
     if (auth_loading || !user) return
+
+    const trigger_changed = auth_trigger !== prev_trigger.current
+    prev_trigger.current  = auth_trigger
+
+    // Already have data and nothing meaningful changed — tab return, silent
+    // token refresh, or any other spurious re-render. Don't reload.
+    if (state_ref.current.phase === "ready" && !trigger_changed) return
 
     const load = async () => {
       if (!has_github) {
@@ -977,8 +1090,10 @@ const Git = () => {
           gh_repos(token),
         ])
 
-        // Persist the token so it survives sign-out / sign-in cycles
+        // Persist the token and record it so the auth listener can tell whether
+        // a future SIGNED_IN carries a genuinely new token or the same one.
         if (session_token) {
+          last_provider_token.current = session_token
           save_github_token(user.id, session_token, ghuser.login)
         }
 
