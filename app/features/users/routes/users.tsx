@@ -460,6 +460,41 @@ const UserRow = ({ user, on_click }: { user: UserAdmin; on_click: () => void }) 
   )
 }
 
+const UserCard = ({ user, on_click }: { user: UserAdmin; on_click: () => void }) => {
+  const tone      = status_tone[user.status ?? "offline"]
+  const role_info = role_style[user.role] ?? role_style.member
+  const display   = user.full_name || user.username || user.email?.split("@")[0] || "—"
+  const is_banned = !!user.banned_until && new Date(user.banned_until) > new Date()
+
+  return (
+    <button
+      type="button"
+      onClick={on_click}
+      className="flex w-full items-center gap-3 border-b border-line/50 px-4 py-3 text-left transition-colors last:border-0 hover:bg-flag-red/[0.03] active:bg-flag-red/[0.06]"
+    >
+      <Avatar url={user.avatar_url} name={display} size="sm" />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <p className="truncate text-sm font-medium text-ink">{display}</p>
+          {is_banned && (
+            <span className="shrink-0 rounded bg-flag-red/10 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-flag-red">banned</span>
+          )}
+        </div>
+        <div className="mt-0.5 flex items-center gap-2">
+          <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-px text-[9px] font-medium uppercase tracking-wide ${role_info.classes}`}>
+            {role_info.label}
+          </span>
+          <span className={`inline-flex items-center gap-1 text-[11px] ${tone.text}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+            {tone.label}
+          </span>
+        </div>
+      </div>
+      <ChevronIcon size={14} className="-rotate-90 shrink-0 text-muted" />
+    </button>
+  )
+}
+
 // ─── Member view ─────────────────────────────────────────────────────────────
 
 const TeamCard = ({ p, on_click }: { p: PublicProfile; on_click: () => void }) => {
@@ -720,8 +755,9 @@ const Users = () => {
   }, [profile?.id])
 
   if (auth_loading || profile_loading) return null
-  if (!user || !profile)               return <Navigate to="/login" replace />
-  if (profile.role !== "root")         return <TeamView />
+  if (!user)    return <Navigate to="/login" replace />
+  if (!profile) return null
+  if (profile.role !== "root") return <TeamView />
 
   const q = search.trim().toLowerCase()
   const filtered = users.filter(u => {
@@ -766,36 +802,38 @@ const Users = () => {
           </div>
 
           {/* Controls */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="relative w-full sm:w-48">
               <SearchIcon size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 value={search}
                 onChange={e => set_search(e.target.value)}
                 placeholder="Search users…"
-                className="w-48 rounded-lg border border-line bg-card/60 py-1.5 pl-8 pr-3 text-xs text-ink outline-none transition-colors placeholder:text-muted/50 focus:border-flag-red"
+                className="w-full rounded-lg border border-line bg-card/60 py-1.5 pl-8 pr-3 text-xs text-ink outline-none transition-colors placeholder:text-muted/50 focus:border-flag-red"
               />
             </div>
-            <Dropdown value={role_f} options={role_filter_opts} on_select={set_role_f} menu_width="w-36"
-              trigger_class="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-ink"
-            >
-              {({ open }) => (
-                <>
-                  {role_filter_opts.find(o => o.value === role_f)?.label}
-                  <ChevronIcon size={11} className={`transition-transform ${open ? "rotate-180" : ""}`} />
-                </>
-              )}
-            </Dropdown>
-            <Dropdown value={status_f} options={status_filter_opts} on_select={set_status_f} menu_width="w-36"
-              trigger_class="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-ink"
-            >
-              {({ open }) => (
-                <>
-                  {status_filter_opts.find(o => o.value === status_f)?.label}
-                  <ChevronIcon size={11} className={`transition-transform ${open ? "rotate-180" : ""}`} />
-                </>
-              )}
-            </Dropdown>
+            <div className="flex gap-2">
+              <Dropdown value={role_f} options={role_filter_opts} on_select={set_role_f} menu_width="w-36"
+                trigger_class="inline-flex flex-1 items-center justify-between gap-1.5 rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-ink sm:flex-none"
+              >
+                {({ open }) => (
+                  <>
+                    {role_filter_opts.find(o => o.value === role_f)?.label}
+                    <ChevronIcon size={11} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+                  </>
+                )}
+              </Dropdown>
+              <Dropdown value={status_f} options={status_filter_opts} on_select={set_status_f} menu_width="w-36"
+                trigger_class="inline-flex flex-1 items-center justify-between gap-1.5 rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-ink sm:flex-none"
+              >
+                {({ open }) => (
+                  <>
+                    {status_filter_opts.find(o => o.value === status_f)?.label}
+                    <ChevronIcon size={11} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+                  </>
+                )}
+              </Dropdown>
+            </div>
           </div>
         </motion.header>
 
@@ -827,25 +865,34 @@ const Users = () => {
               <p className="text-sm text-muted">No users match your filters.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-line/60 text-[10px] uppercase tracking-widest text-muted">
-                    <th className="px-4 py-2.5 font-medium">User</th>
-                    <th className="px-4 py-2.5 font-medium">Role</th>
-                    <th className="px-4 py-2.5 font-medium">Status</th>
-                    <th className="hidden px-4 py-2.5 font-medium md:table-cell">Location</th>
-                    <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Last active</th>
-                    <th className="px-4 py-2.5" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(u => (
-                    <UserRow key={u.id} user={u} on_click={() => set_selected(u)} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <>
+              {/* Mobile: stacked card list */}
+              <div className="sm:hidden">
+                {filtered.map(u => (
+                  <UserCard key={u.id} user={u} on_click={() => set_selected(u)} />
+                ))}
+              </div>
+              {/* Desktop: table */}
+              <div className="hidden sm:block">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-line/60 text-[10px] uppercase tracking-widest text-muted">
+                      <th className="px-4 py-2.5 font-medium">User</th>
+                      <th className="px-4 py-2.5 font-medium">Role</th>
+                      <th className="px-4 py-2.5 font-medium">Status</th>
+                      <th className="hidden px-4 py-2.5 font-medium md:table-cell">Location</th>
+                      <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Last active</th>
+                      <th className="px-4 py-2.5" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(u => (
+                      <UserRow key={u.id} user={u} on_click={() => set_selected(u)} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </motion.div>
 

@@ -21,6 +21,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       set_loading(false)
       return
     }
+    set_loading(true)
     get_profile(user.id).then((p) => {
       set_profile(p)
       set_loading(false)
