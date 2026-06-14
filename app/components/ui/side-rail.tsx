@@ -5,7 +5,7 @@ import { useAuth } from "~/features/auth/lib/auth";
 import { useProfile } from "~/features/profile/lib/profile-context";
 import { status_tone } from "~/features/profile/lib/profile";
 import { AvatarUploader } from "~/features/profile/components/avatar-uploader";
-import { PencilIcon, MenuIcon, ChevronsLeftIcon } from "~/components/ui/icons";
+import { PencilIcon, MenuIcon, ChevronsLeftIcon, UsersIcon } from "~/components/ui/icons";
 
 const COLLAPSE_KEY = "rail_collapsed";
 
@@ -74,6 +74,7 @@ const UserCard = ({ collapsed }: { collapsed: boolean }) => {
 
 export const SideRail = () => {
   const location = useLocation();
+  const { profile } = useProfile();
   const [collapsed, set_collapsed] = useState(read_collapsed);
   const [mobile_open, set_mobile_open] = useState(false);
 
@@ -90,8 +91,9 @@ export const SideRail = () => {
   };
 
   const rail_items = [
-    { to: "/", label: "Dashboard", icon: GridIcon },
-    { to: "/settings", label: "Settings", icon: GearIcon },
+    { to: "/",        label: "Dashboard", icon: GridIcon  },
+    ...(profile?.role === "root" ? [{ to: "/users", label: "Users", icon: UsersIcon }] : []),
+    { to: "/settings", label: "Settings", icon: GearIcon  },
   ];
 
   const label_hidden = collapsed ? "lg:hidden" : "";
