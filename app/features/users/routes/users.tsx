@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { Navigate } from "react-router"
 import { motion } from "motion/react"
 import { useAuth } from "~/features/auth/lib/auth"
@@ -15,6 +15,7 @@ import {
   BriefcaseIcon, ClockIcon, AtSignIcon,
   GithubIcon, TwitterIcon, LinkedinIcon, CalendarIcon,
 } from "~/components/ui/icons"
+import { supabase } from "~/lib/supabase"
 import {
   list_users_admin, admin_update, admin_ban, admin_unban, admin_delete,
   role_options, role_style, format_date, format_rel,
@@ -471,7 +472,10 @@ const Users = () => {
   const [status_f, set_status_f]              = useState("all")
   const [selected, set_selected]              = useState<UserAdmin | null>(null)
 
-  const notify = use_notify()
+  const notify   = use_notify()
+  // Keep a stable ref so the Realtime callback always sees the latest state
+  const users_ref = useRef<UserAdmin[]>([])
+  users_ref.current = users
 
   useEffect(() => {
     if (!profile || profile.role !== "root") return
@@ -484,6 +488,26 @@ const Users = () => {
       }
       set_fetching(false)
     })
+  }, [profile?.id])
+
+  // Live profile updates — status/online changes appear without a refresh
+  useEffect(() => {
+    if (!profile || profile.role !== "root") return
+
+    const channel = supabase
+      .channel("users_admin_presence")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles" },
+        (payload) => {
+          const patch = payload.new as Partial<UserAdmin>
+          set_users(prev => prev.map(u => u.id === patch.id ? { ...u, ...patch } : u))
+          set_selected(prev => prev && prev.id === patch.id ? { ...prev, ...patch } : prev)
+        },
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [profile?.id])
 
   if (auth_loading || profile_loading) return null
