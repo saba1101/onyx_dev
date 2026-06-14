@@ -84,3 +84,28 @@ export const admin_delete = async (target_user_id: string) => {
   const { error } = await supabase.rpc("admin_delete_user", { target_user_id })
   return { error }
 }
+
+// ─── Public (member-visible) profile ─────────────────────────────────────────
+
+export type PublicProfile = {
+  id:           string
+  full_name:    string | null
+  username:     string | null
+  avatar_url:   string | null
+  role:         string
+  status:       profile_status
+  bio:          string | null
+  location:     string | null
+  company:      string | null
+  job_title:    string | null
+  timezone:     string | null
+  github_url:   string | null
+  twitter_url:  string | null
+  linkedin_url: string | null
+  created_at:   string | null
+}
+
+export const list_public_profiles = async () => {
+  const { data, error } = await supabase.rpc("get_public_profiles")
+  return { profiles: (data ?? []) as PublicProfile[], error }
+}

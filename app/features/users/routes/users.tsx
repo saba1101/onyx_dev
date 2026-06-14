@@ -18,11 +18,12 @@ import {
 import { supabase } from "~/lib/supabase"
 import {
   list_users_admin, admin_update, admin_ban, admin_unban, admin_delete,
+  list_public_profiles,
   role_options, role_style, format_date, format_rel,
-  type UserAdmin, type AdminUpdate,
+  type UserAdmin, type AdminUpdate, type PublicProfile,
 } from "~/features/users/lib/users"
 
-export const meta = () => [{ title: "Users — Onyx Dev" }]
+export const meta = () => [{ title: "Team — Onyx Dev" }]
 
 // ─── Avatar ──────────────────────────────────────────────────────────────────
 
@@ -459,6 +460,214 @@ const UserRow = ({ user, on_click }: { user: UserAdmin; on_click: () => void }) 
   )
 }
 
+// ─── Member view ─────────────────────────────────────────────────────────────
+
+const TeamCard = ({ p, on_click }: { p: PublicProfile; on_click: () => void }) => {
+  const tone     = status_tone[p.status ?? "offline"]
+  const ri       = role_style[p.role] ?? role_style.member
+  const display  = p.full_name || p.username || "User"
+  const work_line = [p.job_title, p.company].filter(Boolean).join(" · ")
+
+  return (
+    <motion.button
+      type="button"
+      onClick={on_click}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.18 }}
+      className="surface group flex w-full flex-col items-center rounded-2xl p-5 text-center transition-shadow hover:shadow-lg"
+    >
+      {/* Avatar + online dot */}
+      <div className="relative mb-3">
+        <Avatar url={p.avatar_url} name={display} size="lg" />
+        <span className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card ${tone.dot}`} />
+      </div>
+
+      <p className="w-full truncate text-sm font-semibold text-ink">{display}</p>
+      {p.username && <p className="mt-0.5 w-full truncate text-[11px] text-muted">@{p.username}</p>}
+
+      <span className={`mt-2 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${ri.classes}`}>
+        <ShieldIcon size={9} />{ri.label}
+      </span>
+
+      {work_line && (
+        <p className="mt-2 w-full truncate text-[11px] text-muted">{work_line}</p>
+      )}
+      {p.location && (
+        <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-muted">
+          <MapPinIcon size={11} />{p.location}
+        </p>
+      )}
+    </motion.button>
+  )
+}
+
+const PublicDetailModal = ({ p, on_close }: { p: PublicProfile | null; on_close: () => void }) => {
+  if (!p) return null
+  const tone    = status_tone[p.status ?? "offline"]
+  const ri      = role_style[p.role] ?? role_style.member
+  const display = p.full_name || p.username || "User"
+
+  return (
+    <Modal open={!!p} on_close={on_close} title={display} description="// profile" size="md">
+      {/* Hero */}
+      <div className="mb-5 flex items-center gap-4 rounded-xl border border-line/60 bg-line/10 p-4 dark:bg-white/[0.02]">
+        <div className="relative shrink-0">
+          <Avatar url={p.avatar_url} name={display} size="lg" />
+          <span className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card ${tone.dot}`} />
+        </div>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold text-ink">{display}</p>
+            <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${ri.classes}`}>
+              <ShieldIcon size={9} />{ri.label}
+            </span>
+          </div>
+          {p.username && <p className="mt-0.5 text-xs text-muted">@{p.username}</p>}
+          <p className={`mt-1.5 inline-flex items-center gap-1.5 text-xs ${tone.text}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />{tone.label}
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {p.bio && (
+          <ViewSection title="About">
+            <p className="text-sm leading-relaxed text-ink">{p.bio}</p>
+          </ViewSection>
+        )}
+
+        {(p.company || p.job_title || p.location || p.timezone) && (
+          <ViewSection title="Work">
+            {p.job_title && <IR icon={<AtSignIcon size={14} />}    label="Title"    value={p.job_title} />}
+            {p.company   && <IR icon={<BriefcaseIcon size={14} />} label="Company"  value={p.company} />}
+            {p.location  && <IR icon={<MapPinIcon size={14} />}    label="Location" value={p.location} />}
+            {p.timezone  && <IR icon={<ClockIcon size={14} />}     label="Timezone" value={p.timezone} />}
+          </ViewSection>
+        )}
+
+        {(p.github_url || p.twitter_url || p.linkedin_url) && (
+          <ViewSection title="Social">
+            <div className="flex flex-wrap gap-2">
+              {p.github_url   && <SL icon={<GithubIcon size={14} />}   label="GitHub"   href={p.github_url} />}
+              {p.twitter_url  && <SL icon={<TwitterIcon size={13} />}  label="X"        href={p.twitter_url} />}
+              {p.linkedin_url && <SL icon={<LinkedinIcon size={14} />} label="LinkedIn" href={p.linkedin_url} />}
+            </div>
+          </ViewSection>
+        )}
+
+        <p className="pt-1 text-[11px] text-muted">
+          Joined {format_date(p.created_at)}
+        </p>
+      </div>
+    </Modal>
+  )
+}
+
+const TeamView = () => {
+  const [profiles, set_profiles] = useState<PublicProfile[]>([])
+  const [fetching, set_fetching] = useState(true)
+  const [search, set_search]     = useState("")
+  const [status_f, set_status_f] = useState("all")
+  const [selected, set_selected] = useState<PublicProfile | null>(null)
+  const notify = use_notify()
+
+  useEffect(() => {
+    list_public_profiles().then(({ profiles: data, error }) => {
+      if (error) notify({ tone: "error", title: "Failed to load team", message: error.message })
+      else set_profiles(data)
+      set_fetching(false)
+    })
+  }, [])
+
+  const q = search.trim().toLowerCase()
+  const filtered = profiles.filter(p => {
+    if (q && !p.full_name?.toLowerCase().includes(q) && !p.username?.toLowerCase().includes(q)) return false
+    if (status_f !== "all" && p.status !== status_f) return false
+    return true
+  })
+
+  const status_filter_opts = [
+    { value: "all", label: "All statuses" },
+    ...status_options.map(o => ({ value: o.value, label: o.label })),
+  ]
+
+  return (
+    <div className="flex min-h-screen">
+      <SideRail />
+      <main className="flex min-w-0 flex-1 flex-col gap-6 px-4 pb-12 pt-20 sm:px-6 lg:gap-8 lg:p-8">
+
+        <motion.header
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-wrap items-end justify-between gap-4"
+        >
+          <div>
+            <p className="text-[11px] uppercase tracking-widest text-flag-red">// team</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight">Team</h1>
+            <p className="mt-1 text-xs text-muted">
+              {fetching ? "Loading…" : `${profiles.length} member${profiles.length !== 1 ? "s" : ""}`}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative">
+              <SearchIcon size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+              <input
+                value={search}
+                onChange={e => set_search(e.target.value)}
+                placeholder="Search…"
+                className="w-44 rounded-lg border border-line bg-card/60 py-1.5 pl-8 pr-3 text-xs text-ink outline-none transition-colors placeholder:text-muted/50 focus:border-flag-red"
+              />
+            </div>
+            <Dropdown value={status_f} options={status_filter_opts} on_select={set_status_f} menu_width="w-36"
+              trigger_class="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-ink"
+            >
+              {({ open }) => (
+                <>
+                  {status_filter_opts.find(o => o.value === status_f)?.label}
+                  <ChevronIcon size={11} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+                </>
+              )}
+            </Dropdown>
+          </div>
+        </motion.header>
+
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+        >
+          {fetching ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="surface flex flex-col items-center rounded-2xl p-5">
+                  <div className="mb-3 h-16 w-16 animate-pulse rounded-full bg-line/40" />
+                  <div className="mb-1.5 h-3 w-24 animate-pulse rounded bg-line/40" />
+                  <div className="h-2 w-16 animate-pulse rounded bg-line/30" />
+                </div>
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="surface rounded-2xl px-6 py-16 text-center">
+              <p className="text-sm text-muted">No members match your filters.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filtered.map(p => (
+                <TeamCard key={p.id} p={p} on_click={() => set_selected(p)} />
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+      </main>
+
+      <PublicDetailModal p={selected} on_close={() => set_selected(null)} />
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const Users = () => {
@@ -512,7 +721,7 @@ const Users = () => {
 
   if (auth_loading || profile_loading) return null
   if (!user || !profile)               return <Navigate to="/login" replace />
-  if (profile.role !== "root")         return <Navigate to="/" replace />
+  if (profile.role !== "root")         return <TeamView />
 
   const q = search.trim().toLowerCase()
   const filtered = users.filter(u => {

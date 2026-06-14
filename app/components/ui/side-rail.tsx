@@ -92,7 +92,7 @@ export const SideRail = () => {
 
   const rail_items = [
     { to: "/",        label: "Dashboard", icon: GridIcon  },
-    ...(profile?.role === "root" ? [{ to: "/users", label: "Users", icon: UsersIcon }] : []),
+    { to: "/users", label: profile?.role === "root" ? "Users" : "Team", icon: UsersIcon },
     { to: "/settings", label: "Settings", icon: GearIcon  },
   ];
 
