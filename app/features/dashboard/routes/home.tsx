@@ -4,7 +4,7 @@ import { motion } from "motion/react"
 import {
   ResponsiveContainer,
   PieChart, Pie, Cell,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip as RTooltip,
 } from "recharts"
 import { useAuth } from "~/features/auth/lib/auth"
@@ -13,7 +13,7 @@ import { SideRail } from "~/components/ui/side-rail"
 import { AvatarUploader } from "~/features/profile/components/avatar-uploader"
 import { use_notify } from "~/hooks/use-notify"
 import { supabase } from "~/lib/supabase"
-import { status_tone, type Profile } from "~/features/profile/lib/profile"
+import { effective_status, status_tone, type Profile } from "~/features/profile/lib/profile"
 import {
   GithubIcon, UsersIcon, GitBranchIcon, CalendarIcon,
   ShieldIcon, ChevronIcon, ClockIcon, UserIcon, PencilIcon,
@@ -67,12 +67,13 @@ const completion_pct = (p: Profile | null) => {
 
 type MemberRow = {
   id: string
-  full_name: string | null
-  username:  string | null
-  avatar_url: string | null
-  role:       string
-  status:     string
-  created_at: string | null
+  full_name:   string | null
+  username:    string | null
+  avatar_url:  string | null
+  role:        string
+  status:      string
+  created_at:  string | null
+  last_seen_at: string | null
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -136,13 +137,16 @@ const CT = ({ active, payload, label }: {
 const StatusChart = ({ members }: { members: MemberRow[] }) => {
   const data = useMemo(() => {
     const counts: Record<string, number> = { active: 0, away: 0, busy: 0, offline: 0 }
-    for (const m of members) counts[m.status] = (counts[m.status] ?? 0) + 1
+    for (const m of members) {
+      const s = effective_status(m.status as "active" | "away" | "busy" | "offline", m.last_seen_at)
+      counts[s] = (counts[s] ?? 0) + 1
+    }
     return Object.entries(counts)
       .map(([status, count]) => ({ status, count, color: STATUS_HEX[status] ?? "#6b7280" }))
   }, [members])
 
   const active_members = useMemo(
-    () => members.filter(m => m.status === "active").slice(0, 5),
+    () => members.filter(m => effective_status(m.status as "active" | "away" | "busy" | "offline", m.last_seen_at) === "active").slice(0, 5),
     [members],
   )
 
@@ -221,16 +225,21 @@ const GrowthChart = ({ members }: { members: MemberRow[] }) => {
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
       months.set(key, (months.get(key) ?? 0) + 1)
     }
+    let running = 0
     return [...months.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, count]) => ({
-        month: new Date(key + "-01").toLocaleDateString(undefined, { month: "short", year: "2-digit" }),
-        count,
-      }))
+      .map(([key, count]) => {
+        running += count
+        return {
+          month:   new Date(key + "-01").toLocaleDateString(undefined, { month: "short", year: "2-digit" }),
+          total:   running,
+          new:     count,
+        }
+      })
   }, [members])
 
-  const total = members.length
-  const this_month = data[data.length - 1]?.count ?? 0
+  const total      = members.length
+  const this_month = data[data.length - 1]?.new ?? 0
 
   return (
     <div className="surface flex flex-col rounded-2xl p-5 lg:col-span-2">
@@ -243,7 +252,7 @@ const GrowthChart = ({ members }: { members: MemberRow[] }) => {
           </div>
           {this_month > 0 && (
             <div>
-              <p className="text-lg font-bold tabular-nums text-flag-red">+{this_month}</p>
+              <p className="text-lg font-bold tabular-nums text-light-green">+{this_month}</p>
               <p className="text-[10px] uppercase tracking-wide text-muted">This month</p>
             </div>
           )}
@@ -252,23 +261,38 @@ const GrowthChart = ({ members }: { members: MemberRow[] }) => {
 
       {data.length > 0 ? (
         <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,100,100,0.08)" vertical={false} />
+          <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+            <defs>
+              <linearGradient id="growth_fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stopColor="var(--color-light-green)" stopOpacity={0.25} />
+                <stop offset="100%" stopColor="var(--color-light-green)" stopOpacity={0}    />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-line)" strokeOpacity={0.5} vertical={false} />
             <XAxis
               dataKey="month"
-              tick={{ fontSize: 10, fill: "#6b7280" }}
+              tick={{ fontSize: 10, fill: "var(--color-muted)" }}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
               allowDecimals={false}
-              tick={{ fontSize: 10, fill: "#6b7280" }}
+              tick={{ fontSize: 10, fill: "var(--color-muted)" }}
               tickLine={false}
               axisLine={false}
             />
-            <RTooltip content={<CT />} cursor={{ fill: "rgba(220,38,38,0.05)" }} />
-            <Bar dataKey="count" name="members" fill="hsl(355 81% 47%)" radius={[3, 3, 0, 0]} />
-          </BarChart>
+            <RTooltip content={<CT />} cursor={{ stroke: "var(--color-light-green)", strokeWidth: 1, strokeDasharray: "4 2" }} />
+            <Area
+              type="monotone"
+              dataKey="total"
+              name="members"
+              stroke="var(--color-light-green)"
+              strokeWidth={2}
+              fill="url(#growth_fill)"
+              dot={false}
+              activeDot={{ r: 4, fill: "var(--color-light-green)", stroke: "var(--color-card)", strokeWidth: 2 }}
+            />
+          </AreaChart>
         </ResponsiveContainer>
       ) : (
         <div className="flex flex-1 items-center justify-center py-10">
@@ -297,7 +321,7 @@ const RecentSignups = ({ members }: { members: MemberRow[] }) => {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {recent.map(m => {
           const name = m.full_name || m.username || "User"
-          const tone = status_tone[m.status as keyof typeof status_tone] ?? status_tone.offline
+          const tone = status_tone[effective_status(m.status as "active" | "away" | "busy" | "offline", m.last_seen_at)] ?? status_tone.offline
           return (
             <div key={m.id} className="flex items-center gap-3 rounded-xl border border-line/50 p-3">
               <div className="relative shrink-0">
@@ -383,7 +407,7 @@ const Home = () => {
     if (!profile || profile.role !== "root") return
     supabase
       .from("profiles")
-      .select("id, full_name, username, avatar_url, role, status, created_at")
+      .select("id, full_name, username, avatar_url, role, status, created_at, last_seen_at")
       .order("created_at", { ascending: false })
       .then(({ data }) => set_all_members((data as MemberRow[]) ?? []))
   }, [profile?.role])
@@ -661,6 +685,7 @@ const Home = () => {
             )}
           </motion.section>
         )}
+
 
       </main>
     </div>

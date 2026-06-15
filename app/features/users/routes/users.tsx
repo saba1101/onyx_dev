@@ -3,7 +3,7 @@ import { Navigate } from "react-router"
 import { motion } from "motion/react"
 import { useAuth } from "~/features/auth/lib/auth"
 import { useProfile } from "~/features/profile/lib/profile-context"
-import { status_options, status_tone } from "~/features/profile/lib/profile"
+import { effective_status, status_options, status_tone } from "~/features/profile/lib/profile"
 import { SideRail } from "~/components/ui/side-rail"
 import { Modal } from "~/components/ui/modal"
 import { Dropdown } from "~/components/ui/dropdown"
@@ -69,7 +69,7 @@ const DetailModal = ({ user, current_uid, on_close, on_save, on_remove }: Detail
   const is_banned   = !!user.banned_until && new Date(user.banned_until) > new Date()
   const display     = user.full_name || user.username || user.email?.split("@")[0] || "User"
   const role_info   = role_style[user.role] ?? role_style.member
-  const tone        = status_tone[user.status ?? "offline"]
+  const tone        = status_tone[effective_status(user.status ?? "offline", user.last_seen_at)]
 
   const start_edit = () => {
     set_form({
@@ -410,7 +410,7 @@ const DF = ({
 // ─── Users table row ──────────────────────────────────────────────────────────
 
 const UserRow = ({ user, on_click }: { user: UserAdmin; on_click: () => void }) => {
-  const tone      = status_tone[user.status ?? "offline"]
+  const tone      = status_tone[effective_status(user.status ?? "offline", user.last_seen_at)]
   const role_info = role_style[user.role] ?? role_style.member
   const display   = user.full_name || user.username || user.email?.split("@")[0] || "—"
   const is_banned = !!user.banned_until && new Date(user.banned_until) > new Date()
@@ -461,7 +461,7 @@ const UserRow = ({ user, on_click }: { user: UserAdmin; on_click: () => void }) 
 }
 
 const UserCard = ({ user, on_click }: { user: UserAdmin; on_click: () => void }) => {
-  const tone      = status_tone[user.status ?? "offline"]
+  const tone      = status_tone[effective_status(user.status ?? "offline", user.last_seen_at)]
   const role_info = role_style[user.role] ?? role_style.member
   const display   = user.full_name || user.username || user.email?.split("@")[0] || "—"
   const is_banned = !!user.banned_until && new Date(user.banned_until) > new Date()
@@ -498,7 +498,7 @@ const UserCard = ({ user, on_click }: { user: UserAdmin; on_click: () => void })
 // ─── Member view ─────────────────────────────────────────────────────────────
 
 const TeamCard = ({ p, on_click }: { p: PublicProfile; on_click: () => void }) => {
-  const tone     = status_tone[p.status ?? "offline"]
+  const tone     = status_tone[effective_status(p.status ?? "offline", p.last_seen_at)]
   const ri       = role_style[p.role] ?? role_style.member
   const display  = p.full_name || p.username || "User"
   const work_line = [p.job_title, p.company].filter(Boolean).join(" · ")
@@ -538,7 +538,7 @@ const TeamCard = ({ p, on_click }: { p: PublicProfile; on_click: () => void }) =
 
 const PublicDetailModal = ({ p, on_close }: { p: PublicProfile | null; on_close: () => void }) => {
   if (!p) return null
-  const tone    = status_tone[p.status ?? "offline"]
+  const tone    = status_tone[effective_status(p.status ?? "offline", p.last_seen_at)]
   const ri      = role_style[p.role] ?? role_style.member
   const display = p.full_name || p.username || "User"
 

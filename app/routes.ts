@@ -10,5 +10,6 @@ export default [
   route("settings", "features/settings/routes/settings.tsx"),
   route("profile", "features/profile/routes/profile.tsx"),
   route("users", "features/users/routes/users.tsx"),
-  route("git",   "features/git/routes/git.tsx"),
+  route("git",    "features/git/routes/git.tsx"),
+  route("system", "features/system/routes/system.tsx"),
 ] satisfies RouteConfig;

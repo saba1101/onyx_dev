@@ -91,10 +91,13 @@ export const SideRail = () => {
   };
 
   const rail_items = [
-    { to: "/",        label: "Dashboard", icon: GridIcon  },
-    { to: "/users", label: profile?.role === "root" ? "Users" : "Team", icon: UsersIcon },
-    { to: "/git",      label: "Git",      icon: GitBranchIcon },
-    { to: "/settings", label: "Settings", icon: GearIcon  },
+    { to: "/",         label: "Dashboard", icon: GridIcon       },
+    { to: "/users",    label: profile?.role === "root" ? "Users" : "Team", icon: UsersIcon },
+    { to: "/git",      label: "Git",       icon: GitBranchIcon  },
+    ...(profile?.role === "root"
+      ? [{ to: "/system", label: "System", icon: ServerIcon }]
+      : []),
+    { to: "/settings", label: "Settings",  icon: GearIcon       },
   ];
 
   const label_hidden = collapsed ? "lg:hidden" : "";
@@ -242,5 +245,16 @@ const LogOutIcon = () => (
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
     <polyline points="16 17 21 12 16 7" />
     <line x1="21" y1="12" x2="9" y2="12" />
+  </svg>
+);
+
+const ServerIcon = () => (
+  <svg {...icon_props}>
+    <rect x="2" y="3" width="20" height="6" rx="1.5" />
+    <rect x="2" y="12" width="20" height="6" rx="1.5" />
+    <circle cx="6.5" cy="6" r="1" fill="currentColor" stroke="none" />
+    <circle cx="6.5" cy="15" r="1" fill="currentColor" stroke="none" />
+    <line x1="10" y1="6" x2="14" y2="6" />
+    <line x1="10" y1="15" x2="14" y2="15" />
   </svg>
 );

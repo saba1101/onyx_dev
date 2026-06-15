@@ -206,7 +206,7 @@ const CONTRIBUTION_EV = new Set([
 const ev_detail = (ev: GHEvent): string | null => {
   const p = ev.payload
   if (ev.type === "PushEvent") {
-    const n = Array.isArray(p.commits) ? p.commits.length : 0
+    const n = typeof p.size === "number" ? p.size : Array.isArray(p.commits) ? p.commits.length : 0
     const branch = typeof p.ref === "string" ? p.ref.replace("refs/heads/", "") : ""
     return `${n} commit${n !== 1 ? "s" : ""}${branch ? ` → ${branch}` : ""}`
   }

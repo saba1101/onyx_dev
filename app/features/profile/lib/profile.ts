@@ -22,6 +22,7 @@ export type Profile = {
   linkedin_url: string | null
   created_at: string | null
   updated_at: string | null
+  last_seen_at: string | null
 }
 
 export type ProfileUpdate = Partial<Omit<Profile, "id" | "role" | "created_at" | "updated_at">>
@@ -32,6 +33,19 @@ export const status_options: { value: profile_status; label: string }[] = [
   { value: "busy", label: "Busy" },
   { value: "offline", label: "Offline" },
 ]
+
+// Returns the status that should actually be displayed for a user.
+// If last_seen_at is older than 3 minutes the user is considered offline
+// regardless of what their status field says (handles closed-browser case).
+export const effective_status = (
+  status: profile_status,
+  last_seen_at: string | null,
+): profile_status => {
+  if (status === "offline") return "offline"
+  if (!last_seen_at) return status
+  const stale = Date.now() - new Date(last_seen_at).getTime() > 3 * 60_000
+  return stale ? "offline" : status
+}
 
 export const status_tone: Record<profile_status, { label: string; dot: string; text: string }> = {
   active: { label: "Active", dot: "bg-light-green", text: "text-light-green" },

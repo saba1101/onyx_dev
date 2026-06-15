@@ -103,6 +103,7 @@ export type PublicProfile = {
   twitter_url:  string | null
   linkedin_url: string | null
   created_at:   string | null
+  last_seen_at: string | null
 }
 
 export const list_public_profiles = async () => {
