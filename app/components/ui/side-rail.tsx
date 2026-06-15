@@ -5,7 +5,7 @@ import { useAuth } from "~/features/auth/lib/auth";
 import { useProfile } from "~/features/profile/lib/profile-context";
 import { status_tone } from "~/features/profile/lib/profile";
 import { AvatarUploader } from "~/features/profile/components/avatar-uploader";
-import { PencilIcon, MenuIcon, ChevronsLeftIcon, UsersIcon, GitBranchIcon } from "~/components/ui/icons";
+import { PencilIcon, MenuIcon, ChevronsLeftIcon, UsersIcon, GitBranchIcon, SlidersIcon, ShieldIcon } from "~/components/ui/icons";
 
 const COLLAPSE_KEY = "rail_collapsed";
 
@@ -91,13 +91,17 @@ export const SideRail = () => {
   };
 
   const rail_items = [
-    { to: "/",         label: "Dashboard", icon: GridIcon       },
-    { to: "/users",    label: profile?.role === "root" ? "Users" : "Team", icon: UsersIcon },
-    { to: "/git",      label: "Git",       icon: GitBranchIcon  },
+    { to: "/",           label: "Dashboard", icon: GridIcon      },
+    { to: "/users",      label: profile?.role === "root" ? "Users" : "Team", icon: UsersIcon },
+    { to: "/git",        label: "Git",       icon: GitBranchIcon },
+    { to: "/workspace",  label: "Workspace", icon: SlidersIcon   },
     ...(profile?.role === "root"
-      ? [{ to: "/system", label: "System", icon: ServerIcon }]
+      ? [
+          { to: "/system",      label: "System",      icon: ServerIcon  },
+          { to: "/permissions", label: "Permissions", icon: ShieldIcon  },
+        ]
       : []),
-    { to: "/settings", label: "Settings",  icon: GearIcon       },
+    { to: "/settings",   label: "Settings",  icon: GearIcon      },
   ];
 
   const label_hidden = collapsed ? "lg:hidden" : "";

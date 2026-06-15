@@ -11,5 +11,7 @@ export default [
   route("profile", "features/profile/routes/profile.tsx"),
   route("users", "features/users/routes/users.tsx"),
   route("git",    "features/git/routes/git.tsx"),
-  route("system", "features/system/routes/system.tsx"),
+  route("system",      "features/system/routes/system.tsx"),
+  route("workspace",   "features/workspace/routes/workspace.tsx"),
+  route("permissions", "features/permissions/routes/permissions.tsx"),
 ] satisfies RouteConfig;
