@@ -13,6 +13,7 @@ import {
   GitBranchIcon,
   SlidersIcon,
   ShieldIcon,
+  SearchIcon,
 } from "~/components/ui/icons";
 import { usePermissions } from "~/features/permissions/lib/use-permissions";
 import { use_fullscreen } from "~/hooks/use-fullscreen";
@@ -105,6 +106,7 @@ const PAGE_PATH_TO_KEY: Record<string, string> = {
   "/analytics": "analytics",
   "/git": "git",
   "/users": "users",
+  "/inspector": "inspector",
   "/settings": "settings",
 };
 
@@ -139,6 +141,7 @@ export const SideRail = () => {
     { to: "/analytics",  label: "Analytics",     icon: BarChartIcon },
     { to: "/system",     label: "System",        icon: ServerIcon   },
     { to: "/permissions",label: "Permissions",   icon: ShieldIcon   },
+    { to: "/inspector",  label: "Scanner",       icon: SearchIcon   },
     { to: "/settings",   label: "Settings",      icon: GearIcon     },
   ];
 
