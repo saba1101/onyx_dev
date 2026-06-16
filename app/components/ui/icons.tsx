@@ -311,3 +311,11 @@ export const SlidersIcon = make_stroke(
     <line x1="17" y1="16" x2="23" y2="16" />
   </>,
 )
+
+export const DatabaseIcon = make_stroke(
+  <>
+    <ellipse cx="12" cy="5" rx="9" ry="3" />
+    <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" />
+    <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3" />
+  </>,
+)

@@ -14,8 +14,9 @@ import {
   SlidersIcon,
   ShieldIcon,
   SearchIcon,
+  DatabaseIcon,
 } from "~/components/ui/icons";
-import { usePermissions } from "~/features/permissions/lib/use-permissions";
+import { usePermissionsCtx } from "~/features/permissions/lib/permissions-context";
 import { use_fullscreen } from "~/hooks/use-fullscreen";
 
 const COLLAPSE_KEY = "rail_collapsed";
@@ -118,7 +119,7 @@ export const SideRail = () => {
   const [mobile_open, set_mobile_open] = useState(false);
 
   const is_root = profile?.role === "root";
-  const perms = usePermissions(user?.id ?? null, is_root);
+  const perms   = usePermissionsCtx();
   const { is_fullscreen, toggle: toggle_fullscreen } = use_fullscreen();
 
   useEffect(() => {
@@ -141,17 +142,19 @@ export const SideRail = () => {
     { to: "/analytics",  label: "Analytics",     icon: BarChartIcon },
     { to: "/system",     label: "System",        icon: ServerIcon   },
     { to: "/permissions",label: "Permissions",   icon: ShieldIcon   },
+    { to: "/database",   label: "Database",      icon: DatabaseIcon },
     { to: "/inspector",  label: "Scanner",       icon: SearchIcon   },
     { to: "/settings",   label: "Settings",      icon: GearIcon     },
   ];
 
-  // root sees everything; while loading, hide system/permissions for safety
-  const PRIVILEGED = new Set(["/system", "/permissions"]);
+  const PRIVILEGED = new Set(["/system", "/permissions", "/database"]);
   const rail_items = is_root
     ? all_items
-    : !perms.loaded
-      ? all_items.filter(item => !PRIVILEGED.has(item.to))
-      : all_items.filter(item => !perms.hidden_pages.includes(PAGE_PATH_TO_KEY[item.to] ?? ""));
+    : all_items.filter(item => {
+        if (PRIVILEGED.has(item.to)) return false;
+        if (!perms.loaded) return true;
+        return !perms.hidden_pages.includes(PAGE_PATH_TO_KEY[item.to] ?? "");
+      });
 
   const label_hidden = collapsed ? "lg:hidden" : "";
   const center = collapsed ? "lg:justify-center lg:px-0" : "";

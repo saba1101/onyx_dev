@@ -14,6 +14,7 @@ import { Backdrop } from "~/components/ui/backdrop"
 import { ThemeToggle } from "~/components/ui/theme-toggle"
 import { AuthProvider } from "~/features/auth/lib/auth"
 import { ProfileProvider } from "~/features/profile/lib/profile-context"
+import { PermissionsProvider } from "~/features/permissions/lib/permissions-context"
 import "./app.css"
 
 export const links: Route.LinksFunction = () => [
@@ -72,7 +73,9 @@ export const Layout = ({ children }: { children: React.ReactNode }) => (
 const App = () => (
   <AuthProvider>
     <ProfileProvider>
-      <Outlet />
+      <PermissionsProvider>
+        <Outlet />
+      </PermissionsProvider>
     </ProfileProvider>
   </AuthProvider>
 )
