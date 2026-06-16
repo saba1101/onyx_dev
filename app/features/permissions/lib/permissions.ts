@@ -6,7 +6,7 @@ export type Permission =
   | "delete_any_comment"
   | "manage_columns"
 
-export type PageKey = "dashboard" | "workspace" | "analytics" | "git" | "users" | "settings" | "system" | "permissions"
+export type PageKey = "dashboard" | "workspace" | "analytics" | "git" | "users" | "settings" | "system" | "permissions" | "scanner"
 
 export type MemberPermissions = {
   user_id:            string
@@ -32,7 +32,7 @@ export const PERMISSION_META: Record<Permission, { label: string; desc: string }
   manage_columns:     { label: "Manage columns",    desc: "Add, rename and delete board columns" },
 }
 
-export const PAGES: PageKey[] = ["dashboard", "workspace", "analytics", "git", "users", "settings", "system", "permissions"]
+export const PAGES: PageKey[] = ["dashboard", "workspace", "analytics", "git", "users", "settings", "scanner", "system", "permissions"]
 
 export const PRIVILEGED_PAGES = new Set<PageKey>(["system", "permissions"])
 
@@ -43,6 +43,7 @@ export const PAGE_META: Record<PageKey, { label: string; desc: string }> = {
   git:         { label: "Git",         desc: "GitHub repos and activity feed" },
   users:       { label: "Users",       desc: "Team member directory" },
   settings:    { label: "Settings",    desc: "Account and profile settings" },
+  scanner:     { label: "Scanner",     desc: "Website URL parser and tech analyzer" },
   system:      { label: "System",      desc: "Server stats and system health" },
   permissions: { label: "Permissions", desc: "Manage team roles and access" },
 }

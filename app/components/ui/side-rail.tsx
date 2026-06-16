@@ -106,7 +106,7 @@ const PAGE_PATH_TO_KEY: Record<string, string> = {
   "/analytics": "analytics",
   "/git": "git",
   "/users": "users",
-  "/inspector": "inspector",
+  "/inspector": "scanner",
   "/settings": "settings",
 };
 
