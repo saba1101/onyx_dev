@@ -37,7 +37,7 @@ export const usePermissions = (user_id: string | null, is_root: boolean): Permis
         delete_task:        p?.delete_task        ?? false,
         delete_any_comment: p?.delete_any_comment ?? false,
         manage_columns:     p?.manage_columns     ?? false,
-        hidden_pages:       p?.hidden_pages       ?? [],
+        hidden_pages:       p?.hidden_pages       ?? ["system", "permissions"],
         loaded: true,
       })
     })

@@ -132,28 +132,23 @@ export const SideRail = () => {
   };
 
   const all_items = [
-    { to: "/", label: "Dashboard", icon: GridIcon },
-    { to: "/users", label: is_root ? "Users" : "Team", icon: UsersIcon },
-    { to: "/git", label: "Git", icon: GitBranchIcon },
-    { to: "/workspace", label: "Workspace", icon: SlidersIcon },
-    { to: "/analytics", label: "Workspace Stats", icon: BarChartIcon },
-    ...(is_root
-      ? [
-          { to: "/system", label: "System", icon: ServerIcon },
-          { to: "/permissions", label: "Permissions", icon: ShieldIcon },
-        ]
-      : []),
-    { to: "/settings", label: "Settings", icon: GearIcon },
+    { to: "/",           label: "Dashboard",     icon: GridIcon     },
+    { to: "/users",      label: is_root ? "Users" : "Team", icon: UsersIcon },
+    { to: "/git",        label: "Git",           icon: GitBranchIcon },
+    { to: "/workspace",  label: "Workspace",     icon: SlidersIcon  },
+    { to: "/analytics",  label: "Analytics",     icon: BarChartIcon },
+    { to: "/system",     label: "System",        icon: ServerIcon   },
+    { to: "/permissions",label: "Permissions",   icon: ShieldIcon   },
+    { to: "/settings",   label: "Settings",      icon: GearIcon     },
   ];
 
-  // while permissions are loading show all; root always sees everything
-  const rail_items =
-    !perms.loaded || is_root
-      ? all_items
-      : all_items.filter(
-          (item) =>
-            !perms.hidden_pages.includes(PAGE_PATH_TO_KEY[item.to] ?? ""),
-        );
+  // root sees everything; while loading, hide system/permissions for safety
+  const PRIVILEGED = new Set(["/system", "/permissions"]);
+  const rail_items = is_root
+    ? all_items
+    : !perms.loaded
+      ? all_items.filter(item => !PRIVILEGED.has(item.to))
+      : all_items.filter(item => !perms.hidden_pages.includes(PAGE_PATH_TO_KEY[item.to] ?? ""));
 
   const label_hidden = collapsed ? "lg:hidden" : "";
   const center = collapsed ? "lg:justify-center lg:px-0" : "";
