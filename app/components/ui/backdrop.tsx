@@ -15,9 +15,9 @@ export const Backdrop = () => (
       style={{ background: "var(--backdrop-radial)" }}
     />
 
-    {/* light: subtle warm blush at top via multiply */}
+    {/* light: warm red blush at top via multiply */}
     <div
-      className="absolute inset-0 opacity-[0.055] mix-blend-multiply dark:hidden"
+      className="absolute inset-0 opacity-[0.12] mix-blend-multiply dark:hidden"
       style={{ background: red_glow }}
     />
     {/* dark: vivid glow at top via screen */}
