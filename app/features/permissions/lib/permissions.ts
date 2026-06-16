@@ -6,12 +6,15 @@ export type Permission =
   | "delete_any_comment"
   | "manage_columns"
 
+export type PageKey = "dashboard" | "workspace" | "git" | "users" | "settings"
+
 export type MemberPermissions = {
   user_id:            string
   edit_any_task:      boolean
   delete_task:        boolean
   delete_any_comment: boolean
   manage_columns:     boolean
+  hidden_pages:       string[]
   updated_at:         string
 }
 
@@ -29,11 +32,22 @@ export const PERMISSION_META: Record<Permission, { label: string; desc: string }
   manage_columns:     { label: "Manage columns",    desc: "Add, rename and delete board columns" },
 }
 
+export const PAGES: PageKey[] = ["dashboard", "workspace", "git", "users", "settings"]
+
+export const PAGE_META: Record<PageKey, { label: string; desc: string }> = {
+  dashboard: { label: "Dashboard",  desc: "Activity overview and team stats" },
+  workspace: { label: "Workspace",  desc: "Kanban task board" },
+  git:       { label: "Git",        desc: "GitHub repos and activity feed" },
+  users:     { label: "Users",      desc: "Team member directory" },
+  settings:  { label: "Settings",   desc: "Account and profile settings" },
+}
+
 export const default_permissions = (): Omit<MemberPermissions, "user_id" | "updated_at"> => ({
   edit_any_task:      false,
   delete_task:        false,
   delete_any_comment: false,
   manage_columns:     false,
+  hidden_pages:       [],
 })
 
 export const api = {

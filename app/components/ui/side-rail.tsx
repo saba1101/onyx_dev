@@ -6,6 +6,8 @@ import { useProfile } from "~/features/profile/lib/profile-context";
 import { status_tone } from "~/features/profile/lib/profile";
 import { AvatarUploader } from "~/features/profile/components/avatar-uploader";
 import { PencilIcon, MenuIcon, ChevronsLeftIcon, UsersIcon, GitBranchIcon, SlidersIcon, ShieldIcon } from "~/components/ui/icons";
+import { usePermissions } from "~/features/permissions/lib/use-permissions";
+import { use_fullscreen } from "~/hooks/use-fullscreen";
 
 const COLLAPSE_KEY = "rail_collapsed";
 
@@ -72,11 +74,24 @@ const UserCard = ({ collapsed }: { collapsed: boolean }) => {
   );
 };
 
+const PAGE_PATH_TO_KEY: Record<string, string> = {
+  "/":          "dashboard",
+  "/workspace": "workspace",
+  "/git":       "git",
+  "/users":     "users",
+  "/settings":  "settings",
+}
+
 export const SideRail = () => {
   const location = useLocation();
+  const { user }    = useAuth();
   const { profile } = useProfile();
   const [collapsed, set_collapsed] = useState(read_collapsed);
   const [mobile_open, set_mobile_open] = useState(false);
+
+  const is_root   = profile?.role === "root";
+  const perms     = usePermissions(user?.id ?? null, is_root);
+  const { is_fullscreen, toggle: toggle_fullscreen } = use_fullscreen();
 
   useEffect(() => {
     set_mobile_open(false);
@@ -90,12 +105,12 @@ export const SideRail = () => {
     });
   };
 
-  const rail_items = [
+  const all_items = [
     { to: "/",           label: "Dashboard", icon: GridIcon      },
-    { to: "/users",      label: profile?.role === "root" ? "Users" : "Team", icon: UsersIcon },
+    { to: "/users",      label: is_root ? "Users" : "Team",      icon: UsersIcon },
     { to: "/git",        label: "Git",       icon: GitBranchIcon },
     { to: "/workspace",  label: "Workspace", icon: SlidersIcon   },
-    ...(profile?.role === "root"
+    ...(is_root
       ? [
           { to: "/system",      label: "System",      icon: ServerIcon  },
           { to: "/permissions", label: "Permissions", icon: ShieldIcon  },
@@ -103,6 +118,11 @@ export const SideRail = () => {
       : []),
     { to: "/settings",   label: "Settings",  icon: GearIcon      },
   ];
+
+  // while permissions are loading show all; root always sees everything
+  const rail_items = (!perms.loaded || is_root)
+    ? all_items
+    : all_items.filter(item => !perms.hidden_pages.includes(PAGE_PATH_TO_KEY[item.to] ?? ""));
 
   const label_hidden = collapsed ? "lg:hidden" : "";
   const center = collapsed ? "lg:justify-center lg:px-0" : "";
@@ -200,6 +220,18 @@ export const SideRail = () => {
           )}
         </nav>
 
+        <button
+          type="button"
+          onClick={toggle_fullscreen}
+          title={is_fullscreen ? "Exit fullscreen" : "Fullscreen"}
+          className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-line/40 hover:text-ink ${center}`}
+        >
+          <span className="shrink-0">
+            {is_fullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
+          </span>
+          <span className={label_hidden}>{is_fullscreen ? "Exit fullscreen" : "Fullscreen"}</span>
+        </button>
+
         <Form method="post" action="/logout">
           <button
             type="submit"
@@ -260,5 +292,23 @@ const ServerIcon = () => (
     <circle cx="6.5" cy="15" r="1" fill="currentColor" stroke="none" />
     <line x1="10" y1="6" x2="14" y2="6" />
     <line x1="10" y1="15" x2="14" y2="15" />
+  </svg>
+);
+
+const FullscreenIcon = () => (
+  <svg {...icon_props}>
+    <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+    <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+    <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+    <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+  </svg>
+);
+
+const ExitFullscreenIcon = () => (
+  <svg {...icon_props}>
+    <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+    <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+    <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+    <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
   </svg>
 );

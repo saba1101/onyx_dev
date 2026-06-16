@@ -9,6 +9,7 @@ export type PermissionsState = {
   delete_task:        boolean
   delete_any_comment: boolean
   manage_columns:     boolean
+  hidden_pages:       string[]
   loaded:             boolean
 }
 
@@ -24,6 +25,7 @@ export const usePermissions = (user_id: string | null, is_root: boolean): Permis
       set_state({
         edit_any_task: true, delete_task: true,
         delete_any_comment: true, manage_columns: true,
+        hidden_pages: [],
         loaded: true,
       })
       return
@@ -35,6 +37,7 @@ export const usePermissions = (user_id: string | null, is_root: boolean): Permis
         delete_task:        p?.delete_task        ?? false,
         delete_any_comment: p?.delete_any_comment ?? false,
         manage_columns:     p?.manage_columns     ?? false,
+        hidden_pages:       p?.hidden_pages       ?? [],
         loaded: true,
       })
     })

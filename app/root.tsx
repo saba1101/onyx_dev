@@ -8,10 +8,10 @@ import {
 } from "react-router"
 
 import type { Route } from "./+types/root"
-import { ThemeToggle } from "~/components/ui/theme-toggle"
 import { SplashIntro } from "~/components/ui/splash-intro"
 import { NotificationProvider } from "~/components/ui/notifications"
 import { Backdrop } from "~/components/ui/backdrop"
+import { ThemeToggle } from "~/components/ui/theme-toggle"
 import { AuthProvider } from "~/features/auth/lib/auth"
 import { ProfileProvider } from "~/features/profile/lib/profile-context"
 import "./app.css"
@@ -21,13 +21,30 @@ export const links: Route.LinksFunction = () => [
   { rel: "apple-touch-icon", href: "/onyx.png" },
 ]
 
-const theme_setup = `(() => {
-  const saved = localStorage.getItem("theme")
-  const dark = saved ? saved === "dark" : matchMedia("(prefers-color-scheme: dark)").matches
+const appearance_setup = `(() => {
+  // Theme
+  const t = localStorage.getItem("theme") ?? "system"
+  const dark = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches)
   document.documentElement.classList.toggle("dark", dark)
-  if (localStorage.getItem("disable_intro") === "true") {
+
+  // Intro
+  if (localStorage.getItem("disable_intro") === "true")
     document.documentElement.setAttribute("data-no-intro", "")
+
+  // Accent colour
+  const accents = {
+    red:     "hsl(355 81% 47%)", blue:    "hsl(217 91% 56%)",
+    purple:  "hsl(258 80% 56%)", emerald: "hsl(152 68% 37%)",
+    amber:   "hsl(35 92% 50%)",  rose:    "hsl(334 76% 55%)",
   }
+  const a = accents[localStorage.getItem("accent")] || accents.red
+  document.documentElement.style.setProperty("--color-flag-red", a)
+  document.documentElement.style.setProperty("--color-primary",  a)
+
+  // Font size
+  const sizes = { compact: "13px", default: "16px", comfortable: "18px" }
+  document.documentElement.style.fontSize =
+    sizes[localStorage.getItem("font_size")] || "16px"
 })()`
 
 export const Layout = ({ children }: { children: React.ReactNode }) => (
@@ -37,13 +54,15 @@ export const Layout = ({ children }: { children: React.ReactNode }) => (
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <Meta />
       <Links />
-      <script dangerouslySetInnerHTML={{ __html: theme_setup }} />
+      <script dangerouslySetInnerHTML={{ __html: appearance_setup }} />
     </head>
     <body>
       <Backdrop />
       <SplashIntro />
-      <NotificationProvider>{children}</NotificationProvider>
-      <ThemeToggle />
+      <NotificationProvider>
+        {children}
+        <ThemeToggle />
+      </NotificationProvider>
       <ScrollRestoration />
       <Scripts />
     </body>

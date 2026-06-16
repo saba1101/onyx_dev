@@ -492,25 +492,29 @@ export const TaskModal = ({
           {/* ── View mode body ── */}
           {!editing && task && (
             <>
-              {task.description && (
+              {task.description ? (
                 <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink/80">{task.description}</p>
+              ) : (
+                <p className="text-sm italic text-muted/40">No description</p>
               )}
 
-              {/* People row */}
-              <div className="grid grid-cols-2 gap-3 rounded-xl border border-line/40 bg-line/10 p-3">
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">Assigned by</p>
+              <ViewDivider label="details" />
+
+              {/* People */}
+              <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line/40 bg-line/30">
+                <div className="space-y-1.5 bg-card/60 p-3">
+                  <p className="text-[9px] font-semibold uppercase tracking-widest text-muted/60">Assigned by</p>
                   {creator ? (
                     <div className="flex items-center gap-2">
                       <MiniAvatar p={creator} size="xs" />
                       <span className="text-xs text-ink">{creator.full_name || creator.username || "Unknown"}</span>
                     </div>
                   ) : (
-                    <span className="text-xs text-muted/50">—</span>
+                    <span className="text-xs text-muted/40">—</span>
                   )}
                 </div>
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">Assigned to</p>
+                <div className="space-y-1.5 bg-card/60 p-3">
+                  <p className="text-[9px] font-semibold uppercase tracking-widest text-muted/60">Assigned to</p>
                   <UserPicker
                     value={task.assigned_to}
                     profiles={profiles}
@@ -520,12 +524,21 @@ export const TaskModal = ({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
-                <span>Created {fmt_rel(task.created_at)}</span>
+              {/* Timestamps */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted/60">
+                <span className="flex items-center gap-1.5">
+                  <ClockDotIcon />
+                  Created {fmt_rel(task.created_at)}
+                </span>
                 {task.updated_at !== task.created_at && (
-                  <span>Updated {fmt_rel(task.updated_at)}</span>
+                  <span className="flex items-center gap-1.5">
+                    <ClockDotIcon />
+                    Updated {fmt_rel(task.updated_at)}
+                  </span>
                 )}
               </div>
+
+              <ViewDivider label="discussion" />
 
               <Comments
                 task_id={task.id}
@@ -687,3 +700,22 @@ export const StatusModal = ({
     </Modal>
   )
 }
+
+// ── View divider ──────────────────────────────────────────────────────────────
+
+const ViewDivider = ({ label }: { label: string }) => (
+  <div className="flex items-center gap-2.5 py-1">
+    <span className="text-[10px] font-bold text-flag-red/50">//</span>
+    <span className="text-[9px] font-semibold uppercase tracking-widest text-muted/50">{label}</span>
+    <div className="h-px flex-1 bg-gradient-to-r from-line/60 to-transparent" />
+  </div>
+)
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
+
+const ClockDotIcon = () => (
+  <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+)
