@@ -19,5 +19,6 @@ export default [
     route("permissions", "features/permissions/routes/permissions.tsx"),
     route("inspector",   "features/inspector/routes/inspector.tsx"),
     route("database",    "features/database/routes/database.tsx"),
+    route("storage",     "features/storage/routes/storage.tsx"),
   ]),
 ] satisfies RouteConfig;

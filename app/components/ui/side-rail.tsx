@@ -15,6 +15,7 @@ import {
   ShieldIcon,
   SearchIcon,
   DatabaseIcon,
+  ArchiveIcon,
 } from "~/components/ui/icons";
 import { usePermissionsCtx } from "~/features/permissions/lib/permissions-context";
 import { use_fullscreen } from "~/hooks/use-fullscreen";
@@ -143,11 +144,12 @@ export const SideRail = () => {
     { to: "/system",     label: "System",        icon: ServerIcon   },
     { to: "/permissions",label: "Permissions",   icon: ShieldIcon   },
     { to: "/database",   label: "Database",      icon: DatabaseIcon },
+    { to: "/storage",    label: "Storage",       icon: ArchiveIcon  },
     { to: "/inspector",  label: "Scanner",       icon: SearchIcon   },
     { to: "/settings",   label: "Settings",      icon: GearIcon     },
   ];
 
-  const PRIVILEGED = new Set(["/system", "/permissions", "/database"]);
+  const PRIVILEGED = new Set(["/system", "/permissions", "/database", "/storage"]);
   const rail_items = is_root
     ? all_items
     : all_items.filter(item => {
