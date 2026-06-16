@@ -18,6 +18,7 @@ export type WTask = {
   type:        TaskType
   status_id:   string | null
   created_by:  string | null
+  assigned_to: string | null
   position:    number
   created_at:  string
   updated_at:  string
@@ -85,9 +86,9 @@ export const api = {
   tasks: {
     list: () =>
       supabase.from("workspace_tasks").select("*").order("created_at"),
-    create: (d: { title: string; description: string | null; type: TaskType; status_id: string | null; created_by: string }) =>
+    create: (d: { title: string; description: string | null; type: TaskType; status_id: string | null; created_by: string; assigned_to: string | null }) =>
       supabase.from("workspace_tasks").insert(d).select().single(),
-    update: (id: string, patch: Partial<Pick<WTask, "title" | "description" | "type" | "status_id">>) =>
+    update: (id: string, patch: Partial<Pick<WTask, "title" | "description" | "type" | "status_id" | "assigned_to">>) =>
       supabase.from("workspace_tasks")
         .update({ ...patch, updated_at: new Date().toISOString() })
         .eq("id", id).select().single(),

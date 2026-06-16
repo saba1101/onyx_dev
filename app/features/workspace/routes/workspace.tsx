@@ -10,7 +10,7 @@ import { TaskModal, StatusModal } from "~/features/workspace/components/task-mod
 import { PermissionModal } from "~/components/ui/permission-modal"
 import { usePermissions } from "~/features/permissions/lib/use-permissions"
 import {
-  api, STATUS_COLORS, TYPE_META,
+  api, fmt_rel, STATUS_COLORS, TYPE_META,
   type WStatus, type WTask, type WProfile,
 } from "~/features/workspace/lib/workspace"
 
@@ -18,15 +18,40 @@ export const meta = () => [{ title: "Workspace — Onyx Dev" }]
 
 const ease_out = [0.22, 1, 0.36, 1] as const
 
+const is_done_status = (s: WStatus | undefined | null): boolean => {
+  if (!s) return false
+  const n = s.name.toLowerCase().trim()
+  return n === "done" || n === "complete" || n === "completed" || n === "finished" || n === "closed" || n === "resolved"
+}
+
+type ViewMode = "board" | "list"
+
 // ── Drag state ────────────────────────────────────────────────────────────────
 
 type DragInfo = { task_id: string; from_col: string | null }
 
-// ── Task card ─────────────────────────────────────────────────────────────────
+// ── Avatar ────────────────────────────────────────────────────────────────────
+
+const MiniAvatar = ({ p, size = "sm" }: { p?: WProfile | null; size?: "sm" | "xs" }) => {
+  const dim = size === "xs" ? "h-4 w-4 text-[8px]" : "h-5 w-5 text-[9px]"
+  const name = p?.full_name || p?.username || "?"
+  const init = name[0].toUpperCase()
+  return (
+    <div className={`${dim} shrink-0 overflow-hidden rounded-full border border-line bg-line/40`}>
+      {p?.avatar_url
+        ? <img src={p.avatar_url} alt={name} className="h-full w-full object-cover" />
+        : <div className="flex h-full w-full items-center justify-center font-semibold text-muted">{init}</div>
+      }
+    </div>
+  )
+}
+
+// ── Task card (board) ─────────────────────────────────────────────────────────
 
 const TaskCard = ({
   task,
   profiles,
+  done,
   drag_over,
   on_drag_start,
   on_drag_over,
@@ -35,6 +60,7 @@ const TaskCard = ({
 }: {
   task:          WTask
   profiles:      Map<string, WProfile>
+  done:          boolean
   drag_over:     boolean
   on_drag_start: (e: React.DragEvent) => void
   on_drag_over:  (e: React.DragEvent) => void
@@ -42,7 +68,8 @@ const TaskCard = ({
   on_click:      () => void
 }) => {
   const type_meta = TYPE_META[task.type]
-  const creator   = task.created_by ? profiles.get(task.created_by) : null
+  const creator   = task.created_by  ? profiles.get(task.created_by)  : null
+  const assignee  = task.assigned_to ? profiles.get(task.assigned_to) : null
 
   return (
     <div
@@ -54,18 +81,28 @@ const TaskCard = ({
       className={`group relative cursor-pointer rounded-xl border p-3 transition-all duration-150
         ${drag_over
           ? "border-flag-red/50 bg-flag-red/5"
-          : "surface border-transparent hover:border-line"
+          : done
+            ? "border-light-green/20 bg-light-green/5 hover:border-light-green/35"
+            : "surface border-transparent hover:border-line"
         }`}
     >
+      {/* Done checkmark badge */}
+      {done && (
+        <span className="absolute right-2.5 top-2.5 flex h-4 w-4 items-center justify-center rounded-full bg-light-green/20">
+          <DoneCheckIcon />
+        </span>
+      )}
+
       <div className="mb-2.5 flex items-start gap-2">
         <GripDots />
-        <p className="flex-1 text-sm font-medium leading-snug text-ink line-clamp-2">
+        <p className={`flex-1 text-sm font-medium leading-snug line-clamp-2 transition-colors
+          ${done ? "text-muted/60 line-through decoration-muted/40" : "text-ink"}`}>
           {task.title}
         </p>
       </div>
 
       <div className="flex items-center gap-1.5 flex-wrap">
-        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${type_meta.cls}`}>
+        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${done ? "opacity-50" : ""} ${type_meta.cls}`}>
           {type_meta.label}
         </span>
         {task.description && (
@@ -75,14 +112,26 @@ const TaskCard = ({
         )}
       </div>
 
-      {creator && (
-        <div className="mt-2.5 flex items-center gap-1.5">
-          <MiniAvatar p={creator} />
-          <span className="text-[10px] text-muted truncate">
-            {creator.full_name || creator.username || "Unknown"}
-          </span>
-        </div>
-      )}
+      {/* Assignee / creator row */}
+      <div className="mt-2.5 flex items-center justify-between gap-2">
+        {creator && (
+          <div className="flex items-center gap-1" title={`Created by ${creator.full_name || creator.username}`}>
+            <MiniAvatar p={creator} size="xs" />
+            <span className="text-[10px] text-muted truncate max-w-[60px]">
+              {creator.full_name || creator.username}
+            </span>
+          </div>
+        )}
+        {assignee && (
+          <div className="flex items-center gap-1 ml-auto" title={`Assigned to ${assignee.full_name || assignee.username}`}>
+            <span className="text-[9px] text-muted">→</span>
+            <MiniAvatar p={assignee} size="xs" />
+            <span className="text-[10px] text-muted truncate max-w-[60px]">
+              {assignee.full_name || assignee.username}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -99,19 +148,6 @@ const GripDots = () => (
     </svg>
   </span>
 )
-
-const MiniAvatar = ({ p }: { p?: WProfile | null }) => {
-  const name = p?.full_name || p?.username || "?"
-  const init = name[0].toUpperCase()
-  return (
-    <div className="h-4 w-4 shrink-0 overflow-hidden rounded-full border border-line bg-line/40">
-      {p?.avatar_url
-        ? <img src={p.avatar_url} alt={name} className="h-full w-full object-cover" />
-        : <div className="flex h-full w-full items-center justify-center text-[8px] font-semibold text-muted">{init}</div>
-      }
-    </div>
-  )
-}
 
 // ── Column ────────────────────────────────────────────────────────────────────
 
@@ -136,7 +172,8 @@ const Column = ({
   on_add:             () => void
   on_card_click:      (task: WTask) => void
 }) => {
-  const c = STATUS_COLORS[status.color]
+  const c    = STATUS_COLORS[status.color]
+  const done = is_done_status(status)
 
   return (
     <div
@@ -174,6 +211,7 @@ const Column = ({
               <TaskCard
                 task={task}
                 profiles={profiles}
+                done={done}
                 drag_over={false}
                 on_drag_start={e => on_drag_start(e, task)}
                 on_drag_over={on_card_drag_over}
@@ -201,6 +239,145 @@ const Column = ({
           <PlusIcon size={13} />
           Add task
         </button>
+      </div>
+    </div>
+  )
+}
+
+// ── List view ─────────────────────────────────────────────────────────────────
+
+const ListView = ({
+  tasks, statuses, profiles, on_click, on_add,
+}: {
+  tasks:    WTask[]
+  statuses: WStatus[]
+  profiles: Map<string, WProfile>
+  on_click: (task: WTask) => void
+  on_add:   () => void
+}) => {
+  const status_map = new Map(statuses.map(s => [s.id, s]))
+
+  return (
+    <div className="flex flex-1 flex-col overflow-hidden min-h-0">
+      <div className="flex-1 overflow-y-auto px-3 pb-4 lg:px-5">
+        {tasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+            <p className="text-sm text-muted">No tasks yet</p>
+            <button
+              type="button"
+              onClick={on_add}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-flag-red px-3.5 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-80"
+            >
+              <PlusIcon size={12} />
+              New task
+            </button>
+          </div>
+        ) : (
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-line/40">
+                <th className="py-2.5 pr-4 text-left text-[10px] font-semibold uppercase tracking-widest text-muted">Title</th>
+                <th className="py-2.5 pr-4 text-left text-[10px] font-semibold uppercase tracking-widest text-muted hidden sm:table-cell">Type</th>
+                <th className="py-2.5 pr-4 text-left text-[10px] font-semibold uppercase tracking-widest text-muted hidden md:table-cell">Status</th>
+                <th className="py-2.5 pr-4 text-left text-[10px] font-semibold uppercase tracking-widest text-muted hidden lg:table-cell">Assigned by</th>
+                <th className="py-2.5 pr-4 text-left text-[10px] font-semibold uppercase tracking-widest text-muted hidden lg:table-cell">Assigned to</th>
+                <th className="py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-muted hidden xl:table-cell">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              <AnimatePresence initial={false}>
+                {tasks.map((task, i) => {
+                  const status   = task.status_id ? status_map.get(task.status_id) : null
+                  const creator  = task.created_by  ? profiles.get(task.created_by)  : null
+                  const assignee = task.assigned_to ? profiles.get(task.assigned_to) : null
+                  const type_m   = TYPE_META[task.type]
+                  const color    = status ? STATUS_COLORS[status.color] : null
+                  const done     = is_done_status(status)
+
+                  return (
+                    <motion.tr
+                      key={task.id}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15, delay: i * 0.02 }}
+                      onClick={() => on_click(task)}
+                      className={`group cursor-pointer border-b border-line/20 transition-colors
+                        ${done ? "bg-light-green/3 hover:bg-light-green/6" : "hover:bg-line/20"}`}
+                    >
+                      {/* Title */}
+                      <td className="py-3 pr-4">
+                        <div className="flex items-center gap-2">
+                          {done && (
+                            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-light-green/20">
+                              <DoneCheckIcon />
+                            </span>
+                          )}
+                          <div className="min-w-0">
+                            <p className={`font-medium line-clamp-1 ${done ? "text-muted/60 line-through decoration-muted/40" : "text-ink"}`}>
+                              {task.title}
+                            </p>
+                            {task.description && (
+                              <p className="mt-0.5 text-[11px] text-muted line-clamp-1">{task.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Type */}
+                      <td className="py-3 pr-4 hidden sm:table-cell">
+                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${done ? "opacity-50" : ""} ${type_m.cls}`}>
+                          {type_m.label}
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-3 pr-4 hidden md:table-cell">
+                        {status && color ? (
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${color.badge}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${color.dot}`} />
+                            {status.name}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-muted/50">—</span>
+                        )}
+                      </td>
+
+                      {/* Assigned by */}
+                      <td className="py-3 pr-4 hidden lg:table-cell">
+                        {creator ? (
+                          <div className="flex items-center gap-1.5">
+                            <MiniAvatar p={creator} size="xs" />
+                            <span className="text-[11px] text-muted">{creator.full_name || creator.username}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-muted/40">—</span>
+                        )}
+                      </td>
+
+                      {/* Assigned to */}
+                      <td className="py-3 pr-4 hidden lg:table-cell">
+                        {assignee ? (
+                          <div className="flex items-center gap-1.5">
+                            <MiniAvatar p={assignee} size="xs" />
+                            <span className="text-[11px] text-ink">{assignee.full_name || assignee.username}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-muted/40">Unassigned</span>
+                        )}
+                      </td>
+
+                      {/* Created */}
+                      <td className="py-3 hidden xl:table-cell">
+                        <span className="text-[11px] text-muted">{fmt_rel(task.created_at)}</span>
+                      </td>
+                    </motion.tr>
+                  )
+                })}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )
@@ -376,6 +553,7 @@ export default function WorkspacePage() {
   const [tasks,    set_tasks]    = useState<WTask[]>([])
   const [profiles, set_profiles] = useState<Map<string, WProfile>>(new Map())
   const [loading,  set_loading]  = useState(true)
+  const [view,     set_view]     = useState<ViewMode>("board")
 
   // task modal: undefined = closed, null = create, WTask = view
   const [task_open,      set_task_open]      = useState(false)
@@ -589,6 +767,28 @@ export default function WorkspacePage() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* View toggle */}
+            <div className="flex items-center gap-0.5 rounded-lg border border-line bg-line/20 p-0.5">
+              <button
+                type="button"
+                onClick={() => set_view("board")}
+                title="Board view"
+                className={`grid h-6 w-6 cursor-pointer place-items-center rounded-md transition-all
+                  ${view === "board" ? "bg-card text-ink shadow-sm" : "text-muted hover:text-ink"}`}
+              >
+                <BoardIcon />
+              </button>
+              <button
+                type="button"
+                onClick={() => set_view("list")}
+                title="List view"
+                className={`grid h-6 w-6 cursor-pointer place-items-center rounded-md transition-all
+                  ${view === "list" ? "bg-card text-ink shadow-sm" : "text-muted hover:text-ink"}`}
+              >
+                <ListIcon />
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={() => permissions.manage_columns ? set_col_panel_open(true) : set_col_perm_error(true)}
@@ -608,11 +808,19 @@ export default function WorkspacePage() {
           </div>
         </motion.div>
 
-        {/* Board */}
+        {/* Content */}
         {loading ? (
           <div className="flex flex-1 items-center justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-flag-red" />
           </div>
+        ) : view === "list" ? (
+          <ListView
+            tasks={tasks}
+            statuses={statuses}
+            profiles={profiles}
+            on_click={open_task}
+            on_add={() => open_create()}
+          />
         ) : statuses.length === 0 ? (
           <EmptyBoard on_manage={() => permissions.manage_columns ? set_col_panel_open(true) : set_col_perm_error(true)} />
         ) : (
@@ -665,6 +873,7 @@ export default function WorkspacePage() {
                         key={task.id}
                         task={task}
                         profiles={profiles}
+                        done={false}
                         drag_over={false}
                         on_drag_start={e => on_drag_start(e, task)}
                         on_drag_over={on_card_drag_over}
@@ -739,5 +948,30 @@ const KanbanIcon = () => (
     <rect x="3"  y="3" width="4" height="14" rx="1.5" />
     <rect x="10" y="3" width="4" height="9"  rx="1.5" />
     <rect x="17" y="3" width="4" height="11" rx="1.5" />
+  </svg>
+)
+
+const BoardIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3"  y="3" width="4" height="14" rx="1" />
+    <rect x="10" y="3" width="4" height="9"  rx="1" />
+    <rect x="17" y="3" width="4" height="11" rx="1" />
+  </svg>
+)
+
+const ListIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="8"  y1="6"  x2="21" y2="6"  />
+    <line x1="8"  y1="12" x2="21" y2="12" />
+    <line x1="8"  y1="18" x2="21" y2="18" />
+    <line x1="3"  y1="6"  x2="3.01" y2="6"  strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="3"  y1="12" x2="3.01" y2="12" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="3"  y1="18" x2="3.01" y2="18" strokeWidth="2.5" strokeLinecap="round" />
+  </svg>
+)
+
+const DoneCheckIcon = () => (
+  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-light-green">
+    <path d="M20 6 9 17l-5-5" />
   </svg>
 )

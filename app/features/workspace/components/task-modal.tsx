@@ -165,6 +165,57 @@ const Comments = ({
   )
 }
 
+// ── User picker dropdown ──────────────────────────────────────────────────────
+
+const UserPicker = ({
+  value, profiles, placeholder = "Unassigned", on_select, trigger_class,
+}: {
+  value:          string | null
+  profiles:       Map<string, WProfile>
+  placeholder?:   string
+  on_select:      (id: string | null) => void
+  trigger_class?: string
+}) => {
+  const profile_list = Array.from(profiles.values())
+  const selected_p   = value ? profiles.get(value) : null
+
+  const opts = [
+    { value: "", label: "Unassigned", dot: undefined as string | undefined },
+    ...profile_list.map(p => ({
+      value: p.id,
+      label: p.full_name || p.username || p.id.slice(0, 8),
+      dot:   undefined as string | undefined,
+    })),
+  ]
+
+  const cls = trigger_class ??
+    "inline-flex items-center gap-2 rounded-lg border border-line bg-line/20 px-2.5 py-1 text-[11px] font-medium text-ink outline-none transition-colors hover:bg-line/40 max-w-[180px]"
+
+  return (
+    <Dropdown
+      value={value ?? ""}
+      options={opts}
+      on_select={v => on_select(v || null)}
+      menu_width="w-52"
+      trigger_class={cls}
+    >
+      {({ open: dd_open }) => (
+        <>
+          {selected_p ? (
+            <>
+              <MiniAvatar p={selected_p} size="xs" />
+              <span className="truncate">{selected_p.full_name || selected_p.username || "Unknown"}</span>
+            </>
+          ) : (
+            <span className="text-muted/60">{placeholder}</span>
+          )}
+          <ChevronIcon size={10} className={`ml-auto shrink-0 text-muted transition-transform ${dd_open ? "rotate-180" : ""}`} />
+        </>
+      )}
+    </Dropdown>
+  )
+}
+
 // ── Task modal ────────────────────────────────────────────────────────────────
 
 type Props = {
@@ -196,20 +247,23 @@ export const TaskModal = ({
   const [deleting,   set_deleting]   = useState(false)
   const [perm_error, set_perm_error] = useState<string | null>(null)
 
-  const [title,     set_title]     = useState("")
-  const [desc,      set_desc]      = useState("")
-  const [type,      set_type]      = useState<TaskType>("feature")
-  const [status_id, set_status_id] = useState<string | null>(null)
+  const [title,       set_title]       = useState("")
+  const [desc,        set_desc]        = useState("")
+  const [type,        set_type]        = useState<TaskType>("feature")
+  const [status_id,   set_status_id]   = useState<string | null>(null)
+  const [assigned_to, set_assigned_to] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) { set_editing(false); set_confirming(false); set_perm_error(null); return }
     if (is_create) {
       set_title(""); set_desc(""); set_type("feature")
       set_status_id(default_status ?? statuses[0]?.id ?? null)
+      set_assigned_to(null)
       set_editing(true)
     } else {
       set_title(task.title); set_desc(task.description ?? "")
       set_type(task.type);   set_status_id(task.status_id)
+      set_assigned_to(task.assigned_to)
       set_editing(false)
     }
   }, [open, task?.id])
@@ -240,13 +294,13 @@ export const TaskModal = ({
     if (is_create) {
       const { data, error } = await api.tasks.create({
         title: title.trim(), description: desc.trim() || null,
-        type, status_id, created_by: user_id,
+        type, status_id, created_by: user_id, assigned_to,
       })
       if (error) notify({ tone: "error", title: "Failed to create", message: error.message })
       else { on_created(data as WTask); on_close() }
     } else {
       const { data, error } = await api.tasks.update(task.id, {
-        title: title.trim(), description: desc.trim() || null, type, status_id,
+        title: title.trim(), description: desc.trim() || null, type, status_id, assigned_to,
       })
       if (error) notify({ tone: "error", title: "Failed to save", message: error.message })
       else { on_updated(data as WTask); set_editing(false) }
@@ -269,7 +323,15 @@ export const TaskModal = ({
     if (!error && data) on_updated(data as WTask)
   }
 
+  const quick_assign = async (uid: string | null) => {
+    if (!task || uid === task.assigned_to) return
+    const { data, error } = await api.tasks.update(task.id, { assigned_to: uid })
+    if (error) notify({ tone: "error", title: "Failed to assign", message: error.message })
+    else if (data) on_updated(data as WTask)
+  }
+
   const creator  = profiles.get(task?.created_by ?? "")
+  const assignee = profiles.get(task?.assigned_to ?? "")
   const cur_stat = statuses.find(s => s.id === (task ? task.status_id : status_id))
 
   const modal_title = is_create ? "New task" : (editing ? "Edit task" : (task?.title ?? ""))
@@ -342,7 +404,7 @@ export const TaskModal = ({
           {/* ── Form (create + edit) ── */}
           {editing && (
             <div className="space-y-0">
-              <div className="flex items-center gap-3 pb-4">
+              <div className="flex flex-wrap items-center gap-2 pb-4">
                 <div className="flex items-center gap-1 rounded-lg border border-line bg-line/20 p-0.5">
                   {(["feature", "bug"] as TaskType[]).map(t => (
                     <button
@@ -398,6 +460,16 @@ export const TaskModal = ({
                 className="w-full resize-none border-0 bg-transparent pb-2 text-sm leading-relaxed text-ink/80 outline-none placeholder:text-muted/30"
               />
 
+              {/* Assignee row */}
+              <div className="flex items-center gap-3 border-t border-line/60 pt-4 pb-1">
+                <span className="w-20 shrink-0 text-[11px] font-medium uppercase tracking-wide text-muted">Assign to</span>
+                <UserPicker
+                  value={assigned_to}
+                  profiles={profiles}
+                  on_select={set_assigned_to}
+                />
+              </div>
+
               <div className="flex items-center gap-2 border-t border-line/60 pt-4">
                 <button
                   onClick={save}
@@ -421,16 +493,34 @@ export const TaskModal = ({
           {!editing && task && (
             <>
               {task.description && (
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink/80">{task.description}</p>
+                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink/80">{task.description}</p>
               )}
 
+              {/* People row */}
+              <div className="grid grid-cols-2 gap-3 rounded-xl border border-line/40 bg-line/10 p-3">
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">Assigned by</p>
+                  {creator ? (
+                    <div className="flex items-center gap-2">
+                      <MiniAvatar p={creator} size="xs" />
+                      <span className="text-xs text-ink">{creator.full_name || creator.username || "Unknown"}</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted/50">—</span>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">Assigned to</p>
+                  <UserPicker
+                    value={task.assigned_to}
+                    profiles={profiles}
+                    on_select={quick_assign}
+                    trigger_class="inline-flex items-center gap-1.5 rounded-md border border-line bg-card/60 px-2 py-0.5 text-xs font-medium text-ink transition-colors hover:bg-line/40 max-w-full"
+                  />
+                </div>
+              </div>
+
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
-                {creator && (
-                  <span className="flex items-center gap-1.5">
-                    <MiniAvatar p={creator} size="xs" />
-                    {creator.full_name || creator.username || "Unknown"}
-                  </span>
-                )}
                 <span>Created {fmt_rel(task.created_at)}</span>
                 {task.updated_at !== task.created_at && (
                   <span>Updated {fmt_rel(task.updated_at)}</span>
