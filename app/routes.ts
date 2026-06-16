@@ -13,5 +13,6 @@ export default [
   route("git",    "features/git/routes/git.tsx"),
   route("system",      "features/system/routes/system.tsx"),
   route("workspace",   "features/workspace/routes/workspace.tsx"),
+  route("analytics",   "features/workspace/routes/analytics.tsx"),
   route("permissions", "features/permissions/routes/permissions.tsx"),
 ] satisfies RouteConfig;

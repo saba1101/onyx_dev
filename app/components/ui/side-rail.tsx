@@ -5,23 +5,38 @@ import { useAuth } from "~/features/auth/lib/auth";
 import { useProfile } from "~/features/profile/lib/profile-context";
 import { status_tone } from "~/features/profile/lib/profile";
 import { AvatarUploader } from "~/features/profile/components/avatar-uploader";
-import { PencilIcon, MenuIcon, ChevronsLeftIcon, UsersIcon, GitBranchIcon, SlidersIcon, ShieldIcon } from "~/components/ui/icons";
+import {
+  PencilIcon,
+  MenuIcon,
+  ChevronsLeftIcon,
+  UsersIcon,
+  GitBranchIcon,
+  SlidersIcon,
+  ShieldIcon,
+} from "~/components/ui/icons";
 import { usePermissions } from "~/features/permissions/lib/use-permissions";
 import { use_fullscreen } from "~/hooks/use-fullscreen";
 
 const COLLAPSE_KEY = "rail_collapsed";
 
 const read_collapsed = () =>
-  typeof window !== "undefined" && localStorage.getItem(COLLAPSE_KEY) === "true";
+  typeof window !== "undefined" &&
+  localStorage.getItem(COLLAPSE_KEY) === "true";
 
 export const LogoMark = () => (
-  <img src="/onyx.png" alt="Onyx" className="h-7 w-7 rounded-lg object-contain" />
+  <img
+    src="/onyx.png"
+    alt="Onyx"
+    className="h-7 w-7 rounded-lg object-contain"
+  />
 );
 
 const Brand = ({ hidden }: { hidden: string }) => (
   <Link to="/" className="flex items-center gap-2.5">
     <LogoMark />
-    <span className={`inline-flex items-center text-sm font-bold tracking-tight ${hidden}`}>
+    <span
+      className={`inline-flex items-center text-sm font-bold tracking-tight ${hidden}`}
+    >
       <span className="bg-flag-red px-1.5 py-0.5 text-white">onyx</span>
       <span className="text-flag-red">_dev</span>
     </span>
@@ -35,7 +50,10 @@ const UserCard = ({ collapsed }: { collapsed: boolean }) => {
   if (!user) return null;
 
   const display_name =
-    profile?.full_name || profile?.username || user.email?.split("@")[0] || "User";
+    profile?.full_name ||
+    profile?.username ||
+    user.email?.split("@")[0] ||
+    "User";
   const tone = status_tone[profile?.status ?? "active"];
   const label_hidden = collapsed ? "lg:hidden" : "";
 
@@ -53,7 +71,10 @@ const UserCard = ({ collapsed }: { collapsed: boolean }) => {
         Edit
       </Link>
 
-      <Link to="/profile" className={`relative block w-fit ${collapsed ? "" : "mb-2.5"}`}>
+      <Link
+        to="/profile"
+        className={`relative block w-fit ${collapsed ? "" : "mb-2.5"}`}
+      >
         <AvatarUploader url={profile?.avatar_url} editing={false} size="sm" />
         <span
           className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-card ${tone.dot}`}
@@ -61,10 +82,14 @@ const UserCard = ({ collapsed }: { collapsed: boolean }) => {
       </Link>
 
       <div className={label_hidden}>
-        <p className="truncate pr-12 text-xs font-semibold text-ink">{display_name}</p>
+        <p className="truncate pr-12 text-xs font-semibold text-ink">
+          {display_name}
+        </p>
         <p className="truncate text-[10px] text-muted">{user.email}</p>
         {profile?.role && (
-          <span className={`mt-1.5 inline-flex items-center gap-1.5 text-[10px] ${tone.text}`}>
+          <span
+            className={`mt-1.5 inline-flex items-center gap-1.5 text-[10px] ${tone.text}`}
+          >
             <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
             {profile.role} · {tone.label}
           </span>
@@ -75,22 +100,23 @@ const UserCard = ({ collapsed }: { collapsed: boolean }) => {
 };
 
 const PAGE_PATH_TO_KEY: Record<string, string> = {
-  "/":          "dashboard",
+  "/": "dashboard",
   "/workspace": "workspace",
-  "/git":       "git",
-  "/users":     "users",
-  "/settings":  "settings",
-}
+  "/analytics": "analytics",
+  "/git": "git",
+  "/users": "users",
+  "/settings": "settings",
+};
 
 export const SideRail = () => {
   const location = useLocation();
-  const { user }    = useAuth();
+  const { user } = useAuth();
   const { profile } = useProfile();
   const [collapsed, set_collapsed] = useState(read_collapsed);
   const [mobile_open, set_mobile_open] = useState(false);
 
-  const is_root   = profile?.role === "root";
-  const perms     = usePermissions(user?.id ?? null, is_root);
+  const is_root = profile?.role === "root";
+  const perms = usePermissions(user?.id ?? null, is_root);
   const { is_fullscreen, toggle: toggle_fullscreen } = use_fullscreen();
 
   useEffect(() => {
@@ -106,23 +132,28 @@ export const SideRail = () => {
   };
 
   const all_items = [
-    { to: "/",           label: "Dashboard", icon: GridIcon      },
-    { to: "/users",      label: is_root ? "Users" : "Team",      icon: UsersIcon },
-    { to: "/git",        label: "Git",       icon: GitBranchIcon },
-    { to: "/workspace",  label: "Workspace", icon: SlidersIcon   },
+    { to: "/", label: "Dashboard", icon: GridIcon },
+    { to: "/users", label: is_root ? "Users" : "Team", icon: UsersIcon },
+    { to: "/git", label: "Git", icon: GitBranchIcon },
+    { to: "/workspace", label: "Workspace", icon: SlidersIcon },
+    { to: "/analytics", label: "Workspace Stats", icon: BarChartIcon },
     ...(is_root
       ? [
-          { to: "/system",      label: "System",      icon: ServerIcon  },
-          { to: "/permissions", label: "Permissions", icon: ShieldIcon  },
+          { to: "/system", label: "System", icon: ServerIcon },
+          { to: "/permissions", label: "Permissions", icon: ShieldIcon },
         ]
       : []),
-    { to: "/settings",   label: "Settings",  icon: GearIcon      },
+    { to: "/settings", label: "Settings", icon: GearIcon },
   ];
 
   // while permissions are loading show all; root always sees everything
-  const rail_items = (!perms.loaded || is_root)
-    ? all_items
-    : all_items.filter(item => !perms.hidden_pages.includes(PAGE_PATH_TO_KEY[item.to] ?? ""));
+  const rail_items =
+    !perms.loaded || is_root
+      ? all_items
+      : all_items.filter(
+          (item) =>
+            !perms.hidden_pages.includes(PAGE_PATH_TO_KEY[item.to] ?? ""),
+        );
 
   const label_hidden = collapsed ? "lg:hidden" : "";
   const center = collapsed ? "lg:justify-center lg:px-0" : "";
@@ -168,7 +199,9 @@ export const SideRail = () => {
           mobile_open ? "translate-x-0 w-64" : "-translate-x-full w-64"
         } lg:translate-x-0 ${collapsed ? "lg:w-[72px]" : "lg:w-52"}`}
       >
-        <div className={`mb-4 flex items-center justify-between gap-2.5 px-2 ${center}`}>
+        <div
+          className={`mb-4 flex items-center justify-between gap-2.5 px-2 ${center}`}
+        >
           <Brand hidden={label_hidden} />
           <button
             type="button"
@@ -229,7 +262,9 @@ export const SideRail = () => {
           <span className="shrink-0">
             {is_fullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
           </span>
-          <span className={label_hidden}>{is_fullscreen ? "Exit fullscreen" : "Fullscreen"}</span>
+          <span className={label_hidden}>
+            {is_fullscreen ? "Exit fullscreen" : "Fullscreen"}
+          </span>
         </button>
 
         <Form method="post" action="/logout">
@@ -259,6 +294,14 @@ const icon_props = {
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
 };
+
+const BarChartIcon = () => (
+  <svg {...icon_props}>
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" />
+  </svg>
+);
 
 const GridIcon = () => (
   <svg {...icon_props}>
