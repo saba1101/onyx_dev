@@ -1,15 +1,10 @@
 import { useEffect, useMemo, useState } from "react"
-import { Navigate } from "react-router"
 import { motion } from "motion/react"
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area,
 } from "recharts"
-import { useAuth } from "~/features/auth/lib/auth"
-import { SideRail } from "~/components/ui/side-rail"
 import { api, STATUS_COLORS, type WTask, type WStatus, type WProfile, type StatusColor } from "~/features/workspace/lib/workspace"
-
-export const meta = () => [{ title: "Analytics — Onyx Dev" }]
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -109,11 +104,9 @@ const Panel = ({ title, children, className = "" }: { title: string; children: R
   </motion.div>
 )
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── Tab component ─────────────────────────────────────────────────────────────
 
-export default function Analytics() {
-  const { user, loading } = useAuth()
-
+export function AnalyticsTab() {
   const [tasks,    set_tasks]    = useState<WTask[]>([])
   const [statuses, set_statuses] = useState<WStatus[]>([])
   const [profiles, set_profiles] = useState<WProfile[]>([])
@@ -132,39 +125,13 @@ export default function Analytics() {
     })
   }, [])
 
-  if (loading) return null
-  if (!user)   return <Navigate to="/login" replace />
-
-  return (
-    <div className="flex h-screen overflow-hidden">
-      <SideRail />
-      <main className="flex flex-1 flex-col overflow-hidden pt-14 lg:pt-0">
-
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease }}
-          className="flex shrink-0 items-center gap-3 border-b border-line bg-card px-4 py-3 lg:px-6 lg:py-4"
-        >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-flag-red/10 text-flag-red">
-            <ChartIcon />
-          </span>
-          <div>
-            <h1 className="text-sm font-bold text-ink">Analytics</h1>
-            <p className="text-[10px] text-muted">Workspace insights &amp; task metrics</p>
-          </div>
-        </motion.div>
-
-        {fetching ? (
-          <div className="flex flex-1 items-center justify-center">
-            <span className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-flag-red" />
-          </div>
-        ) : (
-          <Body tasks={tasks} statuses={statuses} profiles={profiles} />
-        )}
-      </main>
+  if (fetching) return (
+    <div className="flex flex-1 items-center justify-center">
+      <span className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-flag-red" />
     </div>
   )
+
+  return <Body tasks={tasks} statuses={statuses} profiles={profiles} />
 }
 
 // ── Body (all charts) ─────────────────────────────────────────────────────────

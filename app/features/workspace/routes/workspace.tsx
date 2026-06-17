@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "motion/react"
+import { AnalyticsTab } from "~/features/workspace/routes/analytics"
 import { supabase } from "~/lib/supabase"
 import { useAuth } from "~/features/auth/lib/auth"
 import { useProfile } from "~/features/profile/lib/profile-context"
 import { SideRail } from "~/components/ui/side-rail"
 import { use_notify } from "~/hooks/use-notify"
 import { PlusIcon, SlidersIcon, PencilIcon, XIcon, TrashIcon } from "~/components/ui/icons"
+import { SearchInput } from "~/components/ui/search-input"
 import { TaskModal, StatusModal } from "~/features/workspace/components/task-modal"
 import { PermissionModal } from "~/components/ui/permission-modal"
 import { usePermissions } from "~/features/permissions/lib/use-permissions"
@@ -430,6 +432,9 @@ export default function WorkspacePage() {
   // column permission error
   const [col_perm_error, set_col_perm_error] = useState(false)
 
+  const [active_tab, set_active_tab] = useState<"board" | "analytics">("board")
+  const [search,     set_search]     = useState("")
+
   const is_root   = profile?.role === "root"
   const permissions = usePermissions(user?.id ?? null, is_root)
 
@@ -592,11 +597,13 @@ export default function WorkspacePage() {
 
   if (!user) return null
 
+  const q = search.trim().toLowerCase()
+
   const tasks_by_status = (status_id: string) =>
-    tasks.filter(t => t.status_id === status_id)
+    tasks.filter(t => t.status_id === status_id && (!q || t.title.toLowerCase().includes(q)))
 
   const uncategorised = tasks.filter(
-    t => !t.status_id || !statuses.find(s => s.id === t.status_id)
+    t => (!t.status_id || !statuses.find(s => s.id === t.status_id)) && (!q || t.title.toLowerCase().includes(q))
   )
 
   return (
@@ -609,42 +616,86 @@ export default function WorkspacePage() {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: ease_out }}
-          className="flex shrink-0 items-center justify-between gap-3 border-b border-line bg-card px-4 py-3 lg:gap-4 lg:px-6 lg:py-4"
+          className="flex shrink-0 flex-col border-b border-line bg-card"
         >
-          <div className="flex items-center gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-flag-red/10 text-flag-red">
-              <KanbanIcon />
-            </span>
-            <div>
-              <h1 className="text-sm font-bold text-ink">Workspace</h1>
-              <p className="text-[10px] text-muted">
-                {tasks.length} task{tasks.length !== 1 ? "s" : ""} · {statuses.length} column{statuses.length !== 1 ? "s" : ""}
-              </p>
+          {/* Title row */}
+          <div className="flex items-center justify-between gap-3 px-4 py-3 lg:gap-4 lg:px-6 lg:py-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-flag-red/10 text-flag-red">
+                <KanbanIcon />
+              </span>
+              <div>
+                <h1 className="text-sm font-bold text-ink">Workspace</h1>
+                <p className="text-[10px] text-muted">
+                  {tasks.length} task{tasks.length !== 1 ? "s" : ""} · {statuses.length} column{statuses.length !== 1 ? "s" : ""}
+                </p>
+              </div>
             </div>
+
+            {active_tab === "board" && (
+              <div className="flex items-center gap-2">
+                <SearchInput
+                  value={search}
+                  on_change={set_search}
+                  placeholder="Filter tasks…"
+                  class_name="hidden w-36 sm:block lg:w-48"
+                />
+                <button
+                  type="button"
+                  onClick={() => permissions.manage_columns ? set_col_panel_open(true) : set_col_perm_error(true)}
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-card px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:text-ink lg:px-3"
+                >
+                  <SlidersIcon size={12} />
+                  <span className="hidden sm:inline">Columns</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => open_create()}
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-flag-red px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-80"
+                >
+                  <PlusIcon size={12} />
+                  New task
+                </button>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => permissions.manage_columns ? set_col_panel_open(true) : set_col_perm_error(true)}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-card px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:text-ink lg:px-3"
-            >
-              <SlidersIcon size={12} />
-              <span className="hidden sm:inline">Columns</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => open_create()}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-flag-red px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-80"
-            >
-              <PlusIcon size={12} />
-              New task
-            </button>
+          {/* Tab row */}
+          <div className="px-4 pb-3 lg:px-6">
+            <div className="inline-flex items-center gap-0.5 rounded-xl bg-line/30 p-1">
+              {([
+                { key: "board",     label: "Board",     icon: <TabBoardIcon /> },
+                { key: "analytics", label: "Analytics", icon: <TabChartIcon /> },
+              ] as const).map(({ key, label, icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => set_active_tab(key)}
+                  className={`relative rounded-lg px-3.5 py-1.5 text-[11px] font-semibold transition-colors duration-150 ${
+                    active_tab === key ? "text-flag-red" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {active_tab === key && (
+                    <motion.span
+                      layoutId="ws_tab_bg"
+                      className="absolute inset-0 rounded-lg bg-card shadow-sm"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    {icon}
+                    {label}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </motion.div>
 
         {/* Content */}
-        {loading ? (
+        {active_tab === "analytics" ? (
+          <AnalyticsTab />
+        ) : loading ? (
           <div className="flex flex-1 items-center justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-flag-red" />
           </div>
@@ -784,3 +835,7 @@ const DoneCheckIcon = () => (
     <path d="M20 6 9 17l-5-5" />
   </svg>
 )
+
+const ti = { width: 12, height: 12, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const }
+const TabBoardIcon = () => <svg {...ti}><rect x="3" y="3" width="4" height="14" rx="1"/><rect x="10" y="3" width="4" height="9" rx="1"/><rect x="17" y="3" width="4" height="11" rx="1"/></svg>
+const TabChartIcon = () => <svg {...ti}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>

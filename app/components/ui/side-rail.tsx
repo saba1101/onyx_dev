@@ -12,10 +12,7 @@ import {
   UsersIcon,
   GitBranchIcon,
   SlidersIcon,
-  ShieldIcon,
   SearchIcon,
-  DatabaseIcon,
-  ArchiveIcon,
 } from "~/components/ui/icons";
 import { usePermissionsCtx } from "~/features/permissions/lib/permissions-context";
 import { use_fullscreen } from "~/hooks/use-fullscreen";
@@ -103,13 +100,12 @@ const UserCard = ({ collapsed }: { collapsed: boolean }) => {
 };
 
 const PAGE_PATH_TO_KEY: Record<string, string> = {
-  "/": "dashboard",
+  "/":          "dashboard",
   "/workspace": "workspace",
-  "/analytics": "analytics",
-  "/git": "git",
-  "/users": "users",
+  "/git":       "git",
+  "/users":     "users",
   "/inspector": "scanner",
-  "/settings": "settings",
+  "/settings":  "settings",
 };
 
 export const SideRail = () => {
@@ -136,20 +132,16 @@ export const SideRail = () => {
   };
 
   const all_items = [
-    { to: "/",           label: "Dashboard",     icon: GridIcon     },
-    { to: "/users",      label: is_root ? "Users" : "Team", icon: UsersIcon },
-    { to: "/git",        label: "Git",           icon: GitBranchIcon },
-    { to: "/workspace",  label: "Workspace",     icon: SlidersIcon  },
-    { to: "/analytics",  label: "Analytics",     icon: BarChartIcon },
-    { to: "/system",     label: "System",        icon: ServerIcon   },
-    { to: "/permissions",label: "Permissions",   icon: ShieldIcon   },
-    { to: "/database",   label: "Database",      icon: DatabaseIcon },
-    { to: "/storage",    label: "Storage",       icon: ArchiveIcon  },
-    { to: "/inspector",  label: "Scanner",       icon: SearchIcon   },
-    { to: "/settings",   label: "Settings",      icon: GearIcon     },
+    { to: "/",          label: "Dashboard",              icon: GridIcon     },
+    { to: "/users",     label: is_root ? "Users" : "Team", icon: UsersIcon },
+    { to: "/git",       label: "Git",                    icon: GitBranchIcon },
+    { to: "/workspace", label: "Workspace",              icon: SlidersIcon  },
+    { to: "/system",    label: "System",                 icon: ServerIcon   },
+    { to: "/inspector", label: "Scanner",                icon: SearchIcon   },
+    { to: "/settings",  label: "Settings",               icon: GearIcon     },
   ];
 
-  const PRIVILEGED = new Set(["/system", "/permissions", "/database", "/storage"]);
+  const PRIVILEGED = new Set(["/system"]);
   const rail_items = is_root
     ? all_items
     : all_items.filter(item => {

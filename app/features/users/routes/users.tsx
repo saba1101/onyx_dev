@@ -3,6 +3,7 @@ import { Navigate } from "react-router"
 import { motion } from "motion/react"
 import { useAuth } from "~/features/auth/lib/auth"
 import { useProfile } from "~/features/profile/lib/profile-context"
+import { AccessTab } from "~/features/permissions/routes/permissions"
 import { effective_status, status_options, status_tone } from "~/features/profile/lib/profile"
 import { SideRail } from "~/components/ui/side-rail"
 import { Modal } from "~/components/ui/modal"
@@ -715,6 +716,7 @@ const Users = () => {
   const [role_f, set_role_f]                  = useState("all")
   const [status_f, set_status_f]              = useState("all")
   const [selected, set_selected]              = useState<UserAdmin | null>(null)
+  const [active_tab, set_active_tab]          = useState<"members" | "access">("members")
 
   const notify   = use_notify()
   // Keep a stable ref so the Realtime callback always sees the latest state
@@ -782,18 +784,19 @@ const Users = () => {
   ]
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <SideRail />
 
-      <main className="relative flex min-w-0 flex-1 flex-col gap-4 px-4 pb-12 pt-20 sm:px-6 lg:gap-5 lg:px-8 lg:pb-8 lg:pt-12">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden pt-14 lg:pt-0">
 
-        <motion.header
+        <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-wrap items-center justify-between gap-3 lg:absolute lg:inset-x-8 lg:top-2 lg:z-10"
+          className="relative flex shrink-0 items-center justify-between border-b border-line bg-card px-4 py-3 lg:px-8 lg:py-4"
         >
-          <div className="flex items-center gap-2">
+          {/* Left — title */}
+          <div className="flex shrink-0 items-center gap-2">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
             <h1 className="text-sm font-semibold tracking-tight text-ink">Users</h1>
             <span className="text-[11px] text-muted">
@@ -801,100 +804,140 @@ const Users = () => {
             </span>
           </div>
 
-          {/* Controls */}
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
-            <div className="relative w-full sm:w-48">
-              <SearchIcon size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-              <input
-                value={search}
-                onChange={e => set_search(e.target.value)}
-                placeholder="Search users…"
-                className="w-full rounded-lg border border-line bg-card/60 py-1.5 pl-8 pr-3 text-xs text-ink outline-none transition-colors placeholder:text-muted/50 focus:border-flag-red"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Dropdown value={role_f} options={role_filter_opts} on_select={set_role_f} menu_width="w-36"
-                trigger_class="inline-flex flex-1 items-center justify-between gap-1.5 rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-ink sm:flex-none"
-              >
-                {({ open }) => (
-                  <>
-                    {role_filter_opts.find(o => o.value === role_f)?.label}
-                    <ChevronIcon size={11} className={`transition-transform ${open ? "rotate-180" : ""}`} />
-                  </>
-                )}
-              </Dropdown>
-              <Dropdown value={status_f} options={status_filter_opts} on_select={set_status_f} menu_width="w-36"
-                trigger_class="inline-flex flex-1 items-center justify-between gap-1.5 rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-ink sm:flex-none"
-              >
-                {({ open }) => (
-                  <>
-                    {status_filter_opts.find(o => o.value === status_f)?.label}
-                    <ChevronIcon size={11} className={`transition-transform ${open ? "rotate-180" : ""}`} />
-                  </>
-                )}
-              </Dropdown>
-            </div>
-          </div>
-        </motion.header>
-
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
-          className="surface overflow-hidden rounded-2xl"
-        >
-          {fetch_err ? (
-            <div className="px-6 py-12 text-center">
-              <p className="text-sm text-flag-red">{fetch_err}</p>
-              <p className="mt-1 text-xs text-muted">Check your Supabase RLS policies and ensure you are signed in as root.</p>
-            </div>
-          ) : fetching ? (
-            <div className="space-y-0">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4 border-b border-line/50 px-4 py-3 last:border-0">
-                  <div className="h-8 w-8 animate-pulse rounded-full bg-line/40" />
-                  <div className="flex-1 space-y-1.5">
-                    <div className="h-2.5 w-32 animate-pulse rounded bg-line/40" />
-                    <div className="h-2 w-48 animate-pulse rounded bg-line/30" />
-                  </div>
-                </div>
+          {/* Center — tabs, absolutely positioned so they stay truly centred */}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="pointer-events-auto inline-flex items-center gap-0.5 rounded-xl bg-line/30 p-1">
+              {([
+                { key: "members", label: "Members", icon: <TabUsersIcon /> },
+                { key: "access",  label: "Access",  icon: <TabShieldIcon /> },
+              ] as const).map(({ key, label, icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => set_active_tab(key)}
+                  className={`relative rounded-lg px-3.5 py-1.5 text-[11px] font-semibold transition-colors duration-150 ${
+                    active_tab === key ? "text-flag-red" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {active_tab === key && (
+                    <motion.span
+                      layoutId="usr_tab_bg"
+                      className="absolute inset-0 rounded-lg bg-card shadow-sm"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    {icon}
+                    {label}
+                  </span>
+                </button>
               ))}
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <p className="text-sm text-muted">No users match your filters.</p>
-            </div>
-          ) : (
-            <>
-              {/* Mobile: stacked card list */}
-              <div className="sm:hidden">
-                {filtered.map(u => (
-                  <UserCard key={u.id} user={u} on_click={() => set_selected(u)} />
-                ))}
-              </div>
-              {/* Desktop: table */}
-              <div className="hidden sm:block">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-line/60 text-[10px] uppercase tracking-widest text-muted">
-                      <th className="px-4 py-2.5 font-medium">User</th>
-                      <th className="px-4 py-2.5 font-medium">Role</th>
-                      <th className="px-4 py-2.5 font-medium">Status</th>
-                      <th className="hidden px-4 py-2.5 font-medium md:table-cell">Location</th>
-                      <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Last active</th>
-                      <th className="px-4 py-2.5" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map(u => (
-                      <UserRow key={u.id} user={u} on_click={() => set_selected(u)} />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
+          </div>
+
+          {/* Right — search + filters (members tab only) */}
+          <div className="flex shrink-0 items-center gap-2">
+            {active_tab === "members" && (
+              <>
+                <div className="relative hidden sm:block">
+                  <SearchIcon size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                  <input
+                    value={search}
+                    onChange={e => set_search(e.target.value)}
+                    placeholder="Search users…"
+                    className="w-40 rounded-lg border border-line bg-card/60 py-1.5 pl-8 pr-3 text-xs text-ink outline-none transition-colors placeholder:text-muted/50 focus:border-flag-red lg:w-48"
+                  />
+                </div>
+                <Dropdown value={role_f} options={role_filter_opts} on_select={set_role_f} menu_width="w-36"
+                  trigger_class="inline-flex items-center justify-between gap-1.5 rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-ink"
+                >
+                  {({ open }) => (
+                    <>
+                      {role_filter_opts.find(o => o.value === role_f)?.label}
+                      <ChevronIcon size={11} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+                    </>
+                  )}
+                </Dropdown>
+                <Dropdown value={status_f} options={status_filter_opts} on_select={set_status_f} menu_width="w-36"
+                  trigger_class="inline-flex items-center justify-between gap-1.5 rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-ink"
+                >
+                  {({ open }) => (
+                    <>
+                      {status_filter_opts.find(o => o.value === status_f)?.label}
+                      <ChevronIcon size={11} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+                    </>
+                  )}
+                </Dropdown>
+              </>
+            )}
+          </div>
         </motion.div>
+
+        {/* Scrollable content — fixed height prevents layout shift on tab switch */}
+        <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
+          {active_tab === "access" ? (
+            <AccessTab />
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+              className="surface overflow-hidden rounded-2xl"
+            >
+              {fetch_err ? (
+                <div className="px-6 py-12 text-center">
+                  <p className="text-sm text-flag-red">{fetch_err}</p>
+                  <p className="mt-1 text-xs text-muted">Check your Supabase RLS policies and ensure you are signed in as root.</p>
+                </div>
+              ) : fetching ? (
+                <div className="space-y-0">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-4 border-b border-line/50 px-4 py-3 last:border-0">
+                      <div className="h-8 w-8 animate-pulse rounded-full bg-line/40" />
+                      <div className="flex-1 space-y-1.5">
+                        <div className="h-2.5 w-32 animate-pulse rounded bg-line/40" />
+                        <div className="h-2 w-48 animate-pulse rounded bg-line/30" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="px-6 py-12 text-center">
+                  <p className="text-sm text-muted">No users match your filters.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Mobile: stacked card list */}
+                  <div className="sm:hidden">
+                    {filtered.map(u => (
+                      <UserCard key={u.id} user={u} on_click={() => set_selected(u)} />
+                    ))}
+                  </div>
+                  {/* Desktop: table */}
+                  <div className="hidden sm:block">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-line/60 text-[10px] uppercase tracking-widest text-muted">
+                          <th className="px-4 py-2.5 font-medium">User</th>
+                          <th className="px-4 py-2.5 font-medium">Role</th>
+                          <th className="px-4 py-2.5 font-medium">Status</th>
+                          <th className="hidden px-4 py-2.5 font-medium md:table-cell">Location</th>
+                          <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Last active</th>
+                          <th className="px-4 py-2.5" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.map(u => (
+                          <UserRow key={u.id} user={u} on_click={() => set_selected(u)} />
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          )}
+        </div>
 
       </main>
 
@@ -911,5 +954,9 @@ const Users = () => {
     </div>
   )
 }
+
+const ti = { width: 12, height: 12, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const }
+const TabUsersIcon  = () => <svg {...ti}><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></svg>
+const TabShieldIcon = () => <svg {...ti}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
 
 export default Users

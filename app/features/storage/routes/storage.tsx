@@ -1,17 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Navigate } from "react-router"
 import { motion, AnimatePresence } from "motion/react"
-import { useAuth } from "~/features/auth/lib/auth"
-import { useProfile } from "~/features/profile/lib/profile-context"
-import { SideRail } from "~/components/ui/side-rail"
 import { use_notify } from "~/hooks/use-notify"
 import { supabase } from "~/lib/supabase"
 import {
   TrashIcon, UploadIcon, XIcon, ExternalLinkIcon,
   CheckIcon, SearchIcon,
 } from "~/components/ui/icons"
-
-export const meta = () => [{ title: "Storage — Onyx Dev" }]
 
 const ease_out = [0.22, 1, 0.36, 1] as const
 
@@ -318,12 +312,10 @@ const DetailsPanel = ({
   )
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── Tab component ─────────────────────────────────────────────────────────────
 
-export default function StoragePage() {
-  const { user, loading: auth_loading }       = useAuth()
-  const { profile, loading: profile_loading } = useProfile()
-  const notify                                = use_notify()
+export function StorageTab() {
+  const notify = use_notify()
 
   const [buckets,       set_buckets]       = useState<Bucket[]>([])
   const [active_bucket, set_active_bucket] = useState<string>("")
@@ -338,14 +330,6 @@ export default function StoragePage() {
 
   const upload_ref    = useRef<HTMLInputElement>(null)
   const reupload_file = useRef<StorageFile | null>(null)
-
-  if (auth_loading || profile_loading) return (
-    <div className="flex h-screen items-center justify-center">
-      <span className="h-6 w-6 animate-spin rounded-full border-2 border-flag-red/20 border-t-flag-red" />
-    </div>
-  )
-  if (!user) return <Navigate to="/login" replace />
-  if (profile && profile.role !== "root") return <Navigate to="/" replace />
 
   const active_bucket_obj = buckets.find(b => b.id === active_bucket)
   const is_public = active_bucket_obj?.public ?? false
@@ -438,9 +422,7 @@ export default function StoragePage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <SideRail />
-      <main className="flex flex-1 flex-col overflow-hidden pt-14 lg:pt-0">
+    <div className="flex flex-1 flex-col overflow-hidden">
 
         {/* Header */}
         <motion.div
@@ -621,8 +603,6 @@ export default function StoragePage() {
 
           </div>
         )}
-      </main>
-
       {/* Hidden file input */}
       <input
         ref={upload_ref}

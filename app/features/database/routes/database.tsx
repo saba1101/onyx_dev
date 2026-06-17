@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, createContext, useContext } from "react"
-import { Navigate } from "react-router"
 import {
   ReactFlow, Background, BackgroundVariant, Controls, MiniMap,
   Handle, Position, MarkerType,
@@ -7,15 +6,10 @@ import {
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import { motion } from "motion/react"
-import { useAuth } from "~/features/auth/lib/auth"
-import { useProfile } from "~/features/profile/lib/profile-context"
-import { SideRail } from "~/components/ui/side-rail"
 import { Modal } from "~/components/ui/modal"
 import { Toggle } from "~/components/ui/toggle"
 import { supabase } from "~/lib/supabase"
 import { PencilIcon, TrashIcon, PlusIcon, XIcon, CheckIcon } from "~/components/ui/icons"
-
-export const meta = () => [{ title: "Database — Onyx Dev" }]
 
 const ease_out = [0.22, 1, 0.36, 1] as const
 
@@ -33,8 +27,8 @@ type ColMeta = {
 type TableSchema = { pk: string; cols: ColMeta[] }
 
 const PAGE_KEYS = [
-  "dashboard", "workspace", "analytics", "git",
-  "users", "settings", "scanner", "system", "permissions",
+  "dashboard", "workspace", "git",
+  "users", "settings", "scanner", "system",
 ]
 
 const TABLE_SCHEMA: Record<string, TableSchema> = {
@@ -577,21 +571,10 @@ const STATIC_EDGES: Edge[] = EDGE_DEF.map(def => ({
 
 type TableData = { rows: Record<string, unknown>[]; total: number }
 
-export default function DatabasePage() {
-  const { user, loading: auth_loading }       = useAuth()
-  const { profile, loading: profile_loading } = useProfile()
-
+export function DatabaseTab() {
   const [data,    set_data]    = useState<Record<string, TableData>>({})
   const [loading, set_loading] = useState(true)
   const [modal,   set_modal]   = useState<ModalState | null>(null)
-
-  if (auth_loading || profile_loading) return (
-    <div className="flex h-screen items-center justify-center">
-      <span className="h-6 w-6 animate-spin rounded-full border-2 border-flag-red/20 border-t-flag-red" />
-    </div>
-  )
-  if (!user) return <Navigate to="/login" replace />
-  if (profile && profile.role !== "root") return <Navigate to="/" replace />
 
   const refetch = useCallback(async (table_key: string) => {
     const res = await supabase.from(table_key).select("*", { count: "exact" }).limit(5)
@@ -647,12 +630,10 @@ export default function DatabasePage() {
   }))
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <SideRail />
-      <main className="flex flex-1 flex-col overflow-hidden pt-14 lg:pt-0">
+    <div className="flex flex-1 flex-col overflow-hidden">
 
-        {/* Header */}
-        <motion.div
+      {/* Header */}
+      <motion.div
           initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: ease_out }}
           className="flex shrink-0 items-center gap-3 border-b border-line bg-card px-4 py-3 lg:px-6 lg:py-4"
@@ -730,7 +711,6 @@ export default function DatabasePage() {
             </ReactFlow>
           </DbActionsCtx.Provider>
         </div>
-      </main>
 
       <RowEditModal
         state={modal}

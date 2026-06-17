@@ -3,15 +3,13 @@ import { useProfile } from "~/features/profile/lib/profile-context"
 import { usePermissionsCtx } from "~/features/permissions/lib/permissions-context"
 
 const PATH_TO_KEY: Record<string, string> = {
-  "/":            "dashboard",
-  "/workspace":   "workspace",
-  "/analytics":   "analytics",
-  "/git":         "git",
-  "/users":       "users",
-  "/settings":    "settings",
-  "/system":      "system",
-  "/permissions": "permissions",
-  "/inspector":   "scanner",
+  "/":          "dashboard",
+  "/workspace": "workspace",
+  "/git":       "git",
+  "/users":     "users",
+  "/settings":  "settings",
+  "/system":    "system",
+  "/inspector": "scanner",
 }
 
 export default function PageGuard() {

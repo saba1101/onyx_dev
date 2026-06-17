@@ -45,7 +45,7 @@ export const PermissionsProvider = ({ children }: { children: React.ReactNode })
         delete_task:        p?.delete_task        ?? false,
         delete_any_comment: p?.delete_any_comment ?? false,
         manage_columns:     p?.manage_columns     ?? false,
-        hidden_pages:       p?.hidden_pages       ?? ["system", "permissions"],
+        hidden_pages:       p?.hidden_pages       ?? ["system"],
         loaded: true,
       })
     })

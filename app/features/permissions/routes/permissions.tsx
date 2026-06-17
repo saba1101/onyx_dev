@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
-import { Navigate } from "react-router"
 import { motion, AnimatePresence } from "motion/react"
-import { useAuth } from "~/features/auth/lib/auth"
-import { useProfile } from "~/features/profile/lib/profile-context"
-import { SideRail } from "~/components/ui/side-rail"
 import { use_notify } from "~/hooks/use-notify"
+import { SearchInput } from "~/components/ui/search-input"
 import { list_users_admin, role_style, type UserAdmin } from "~/features/users/lib/users"
 import { AvatarUploader } from "~/features/profile/components/avatar-uploader"
 import {
@@ -12,8 +9,6 @@ import {
   ROLES, default_permissions, default_role_permissions,
   type MemberPermissions, type RolePermissions, type Permission, type PageKey, type RoleKey,
 } from "~/features/permissions/lib/permissions"
-
-export const meta = () => [{ title: "Permissions — Onyx Dev" }]
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -233,7 +228,7 @@ const RoleCard = ({
         <div>
           <SectionHead icon={<EyeSvg />} label="Page Visibility" />
           {PAGES.map(page => {
-            const hidden     = rp?.hidden_pages ?? ["system", "permissions"]
+            const hidden     = rp?.hidden_pages ?? ["system"]
             const visible    = !hidden.includes(page)
             const privileged = PRIVILEGED_PAGES.has(page)
             return (
@@ -304,21 +299,18 @@ const RootCard = () => (
   </motion.div>
 )
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── Tab component ─────────────────────────────────────────────────────────────
 
-export default function PermissionsPage() {
-  const { user }    = useAuth()
-  const { profile } = useProfile()
-  const notify      = use_notify()
+export function AccessTab() {
+  const notify = use_notify()
 
-  const [tab,      set_tab]     = useState<"users" | "roles">("users")
-  const [members,  set_members] = useState<UserAdmin[]>([])
-  const [perms,    set_perms]   = useState<PermsMap>({})
+  const [tab,        set_tab]       = useState<"users" | "roles">("users")
+  const [members,    set_members]   = useState<UserAdmin[]>([])
+  const [perms,      set_perms]     = useState<PermsMap>({})
   const [role_perms, set_role_perms] = useState<RolePermsMap>({} as RolePermsMap)
-  const [loading,  set_loading] = useState(true)
-  const [saving,   set_saving]  = useState<Set<string>>(new Set())
-
-  if (profile && profile.role !== "root") return <Navigate to="/" replace />
+  const [loading,    set_loading]   = useState(true)
+  const [saving,     set_saving]    = useState<Set<string>>(new Set())
+  const [search,     set_search]    = useState("")
 
   const load = useCallback(async () => {
     const [u_res, p_res, rp_res] = await Promise.all([
@@ -405,7 +397,7 @@ export default function PermissionsPage() {
     const key     = role + "page_" + page
     if (saving.has(key)) return
     const current    = role_perms[role] ?? { role, ...default_role_permissions(role), updated_at: "" }
-    const hidden     = current.hidden_pages ?? ["system", "permissions"]
+    const hidden     = current.hidden_pages ?? ["system"]
     const new_hidden = hidden.includes(page) ? hidden.filter(p => p !== page) : [...hidden, page]
     set_role_perms(prev => ({ ...prev, [role]: { ...current, hidden_pages: new_hidden } }))
     set_saving(prev => new Set(prev).add(key))
@@ -448,116 +440,112 @@ export default function PermissionsPage() {
     set_saving(prev => { const n = new Set(prev); n.delete(key); return n })
   }
 
-  if (!user) return null
-
   const active_perms_total = Object.values(perms).reduce(
     (sum, p) => sum + PERMISSIONS.filter(k => p[k]).length, 0,
   )
 
+  const search_q = search.trim().toLowerCase()
+  const filtered_members = search_q
+    ? members.filter(m =>
+        m.full_name?.toLowerCase().includes(search_q) ||
+        m.username?.toLowerCase().includes(search_q) ||
+        m.email?.toLowerCase().includes(search_q) ||
+        m.role.toLowerCase().includes(search_q)
+      )
+    : members
+
   return (
-    <div className="flex h-screen overflow-hidden">
-      <SideRail />
-
-      <main className="flex flex-1 flex-col overflow-hidden pt-14 lg:pt-0">
-
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease }}
-          className="flex shrink-0 items-center gap-3 border-b border-line bg-card px-4 py-3 lg:px-6 lg:py-4"
-        >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-flag-red/10 text-flag-red">
-            <ShieldSvg />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-sm font-bold text-ink">Permissions</h1>
-            <p className="text-[10px] text-muted">Control task permissions and page visibility per member or role</p>
-          </div>
-          {!loading && (
-            <div className="hidden shrink-0 items-center gap-3 sm:flex">
-              <Stat label="Members" value={members.length} />
-              <Stat label="Permissions granted" value={active_perms_total} accent />
-            </div>
-          )}
-        </motion.div>
-
-        {/* Tabs */}
-        <div className="flex shrink-0 items-center gap-1 border-b border-line px-4 lg:px-6">
-          {([["users", "By User", <UserSvg />], ["roles", "By Role", <RoleSvg />]] as const).map(([key, label, icon]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => set_tab(key)}
-              className={`relative flex items-center gap-1.5 px-3 py-3 text-xs font-semibold transition-colors ${
-                tab === key
-                  ? "text-flag-red after:absolute after:bottom-0 after:inset-x-0 after:h-0.5 after:rounded-full after:bg-flag-red"
-                  : "text-muted hover:text-ink"
-              }`}
-            >
-              {icon}{label}
-            </button>
-          ))}
+    <>
+      {/* Stats row */}
+      {!loading && (
+        <div className="mb-4 flex items-center gap-3">
+          <Stat label="Members" value={members.length} />
+          <Stat label="Permissions granted" value={active_perms_total} accent />
         </div>
+      )}
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {loading ? (
-            <LoadingSkeleton />
-          ) : (
-            <AnimatePresence mode="wait">
+      {/* Sub-tabs */}
+      <div className="flex items-center gap-1 border-b border-line -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 mb-4">
+        {([["users", "By User", <UserSvg />], ["roles", "By Role", <RoleSvg />]] as const).map(([key, label, icon]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => set_tab(key)}
+            className={`relative flex items-center gap-1.5 px-3 py-3 text-xs font-semibold transition-colors ${
+              tab === key
+                ? "text-flag-red after:absolute after:bottom-0 after:inset-x-0 after:h-0.5 after:rounded-full after:bg-flag-red"
+                : "text-muted hover:text-ink"
+            }`}
+          >
+            {icon}{label}
+          </button>
+        ))}
+      </div>
 
-              {/* ── By User ── */}
-              {tab === "users" && (
-                <motion.div key="users" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                  {members.length === 0 ? <EmptyState /> : (
-                    <div className="space-y-3">
-                      {members.map((member, i) => (
-                        <UserCard
-                          key={member.id} member={member} perms={perms}
-                          saving={saving} index={i}
-                          on_toggle_perm={toggle_user_perm}
-                          on_toggle_page={toggle_user_page}
-                        />
-                      ))}
-                      <p className="pt-2 text-[10px] text-muted/50">
-                        Changes save instantly · Root users always have full access and are not listed
-                      </p>
-                    </div>
-                  )}
-                </motion.div>
+      {/* Body */}
+      {loading ? (
+        <LoadingSkeleton />
+      ) : (
+        <AnimatePresence mode="wait">
+
+          {/* ── By User ── */}
+          {tab === "users" && (
+            <motion.div key="users" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+              {members.length === 0 ? <EmptyState /> : (
+                <div className="space-y-3">
+                  <SearchInput
+                    value={search}
+                    on_change={set_search}
+                    placeholder="Search members…"
+                    class_name="max-w-xs"
+                  />
+                  {filtered_members.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-muted">No members match your search.</p>
+                  ) : filtered_members.map((member, i) => (
+                    <UserCard
+                      key={member.id} member={member} perms={perms}
+                      saving={saving} index={i}
+                      on_toggle_perm={toggle_user_perm}
+                      on_toggle_page={toggle_user_page}
+                    />
+                  ))}
+                  <p className="pt-2 text-[10px] text-muted/50">
+                    Changes save instantly · Root users always have full access and are not listed
+                  </p>
+                </div>
               )}
-
-              {/* ── By Role ── */}
-              {tab === "roles" && (
-                <motion.div key="roles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                  <div className="space-y-5">
-                    <div className="grid gap-5 lg:grid-cols-2">
-                      {ROLES.map(r => (
-                        <RoleCard
-                          key={r.key}
-                          role_key={r.key} label={r.label} desc={r.desc} color={r.color}
-                          rp={role_perms[r.key]}
-                          saving_set={saving}
-                          members={members}
-                          on_toggle_perm={toggle_role_perm}
-                          on_toggle_page={toggle_role_page}
-                          on_apply={apply_role_to_all}
-                        />
-                      ))}
-                    </div>
-                    <RootCard />
-                    <p className="text-[10px] text-muted/50">
-                      Role defaults auto-save · Use "Apply to all" to push settings to every user of that role
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-
-            </AnimatePresence>
+            </motion.div>
           )}
-        </div>
-      </main>
-    </div>
+
+          {/* ── By Role ── */}
+          {tab === "roles" && (
+            <motion.div key="roles" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+              <div className="space-y-5">
+                <div className="grid gap-5 lg:grid-cols-2">
+                  {ROLES.map(r => (
+                    <RoleCard
+                      key={r.key}
+                      role_key={r.key} label={r.label} desc={r.desc} color={r.color}
+                      rp={role_perms[r.key]}
+                      saving_set={saving}
+                      members={members}
+                      on_toggle_perm={toggle_role_perm}
+                      on_toggle_page={toggle_role_page}
+                      on_apply={apply_role_to_all}
+                    />
+                  ))}
+                </div>
+                <RootCard />
+                <p className="text-[10px] text-muted/50">
+                  Role defaults auto-save · Use "Apply to all" to push settings to every user of that role
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+      )}
+    </>
   )
 }
 

@@ -10,15 +10,11 @@ export default [
 
   layout("features/permissions/routes/page-guard.tsx", [
     index("features/dashboard/routes/home.tsx"),
-    route("settings",    "features/settings/routes/settings.tsx"),
-    route("users",       "features/users/routes/users.tsx"),
-    route("git",         "features/git/routes/git.tsx"),
-    route("system",      "features/system/routes/system.tsx"),
-    route("workspace",   "features/workspace/routes/workspace.tsx"),
-    route("analytics",   "features/workspace/routes/analytics.tsx"),
-    route("permissions", "features/permissions/routes/permissions.tsx"),
-    route("inspector",   "features/inspector/routes/inspector.tsx"),
-    route("database",    "features/database/routes/database.tsx"),
-    route("storage",     "features/storage/routes/storage.tsx"),
+    route("settings",  "features/settings/routes/settings.tsx"),
+    route("users",     "features/users/routes/users.tsx"),
+    route("git",       "features/git/routes/git.tsx"),
+    route("system",    "features/system/routes/system.tsx"),
+    route("workspace", "features/workspace/routes/workspace.tsx"),
+    route("inspector", "features/inspector/routes/inspector.tsx"),
   ]),
 ] satisfies RouteConfig;

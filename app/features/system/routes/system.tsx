@@ -13,6 +13,8 @@ import {
   fetch_system_stats, fmt_bytes,
   type SystemStats, type BucketStat, type TableStat,
 } from "~/features/system/lib/system-stats"
+import { DatabaseTab } from "~/features/database/routes/database"
+import { StorageTab } from "~/features/storage/routes/storage"
 
 export const meta = () => [{ title: "System — Onyx Dev" }]
 
@@ -297,6 +299,7 @@ const System = () => {
   const { user, loading: auth_loading }       = useAuth()
   const { profile, loading: profile_loading } = useProfile()
 
+  const [active_tab, set_active_tab] = useState<"health" | "database" | "storage">("health")
   const [stats,      set_stats]      = useState<SystemStats | null>(null)
   const [fetching,   set_fetching]   = useState(true)
   const [error,      set_error]      = useState<string | null>(null)
@@ -324,41 +327,84 @@ const System = () => {
   const cache_rate    = stats?.db.cache_hit_rate ?? null
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <SideRail />
 
-      <main className="relative flex min-w-0 flex-1 flex-col gap-6 px-4 pb-16 pt-20 sm:px-6 lg:gap-6 lg:px-8 lg:pb-10 lg:pt-12">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden pt-14 lg:pt-0">
 
         {/* Header */}
-        <motion.header
+        <motion.div
           {...fade(0)}
-          className="flex items-center justify-between gap-4 lg:absolute lg:inset-x-8 lg:top-2 lg:z-10"
+          className="flex shrink-0 flex-col border-b border-line bg-card"
         >
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
-            <h1 className="text-sm font-semibold tracking-tight text-ink">System</h1>
-            <span className="hidden text-[11px] text-muted sm:block">Supabase infrastructure</span>
+          {/* Title row */}
+          <div className="flex items-center justify-between gap-4 px-4 py-3 lg:px-6 lg:py-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
+              <h1 className="text-sm font-semibold tracking-tight text-ink">System</h1>
+              <span className="hidden text-[11px] text-muted sm:block">Supabase infrastructure</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {refreshed && active_tab === "health" && (
+                <span className="hidden text-[10px] text-muted sm:block">
+                  Updated {refreshed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                </span>
+              )}
+              {active_tab === "health" && (
+                <button
+                  type="button"
+                  onClick={() => load(true)}
+                  disabled={refreshing || fetching}
+                  className="inline-flex items-center gap-2 rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-line/50 disabled:opacity-50"
+                >
+                  <RefreshIcon spinning={refreshing} />
+                  Refresh
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {refreshed && (
-              <span className="hidden text-[10px] text-muted sm:block">
-                Updated {refreshed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={() => load(true)}
-              disabled={refreshing || fetching}
-              className="inline-flex items-center gap-2 rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-line/50 disabled:opacity-50"
-            >
-              <RefreshIcon spinning={refreshing} />
-              Refresh
-            </button>
+          {/* Tab row */}
+          <div className="px-4 pb-3 lg:px-6">
+            <div className="inline-flex items-center gap-0.5 rounded-xl bg-line/30 p-1">
+              {([
+                { key: "health",   label: "Health",   icon: <TabHealthIcon />   },
+                { key: "database", label: "Database", icon: <TabDbIcon />       },
+                { key: "storage",  label: "Storage",  icon: <TabArchiveIcon />  },
+              ] as const).map(({ key, label, icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => set_active_tab(key)}
+                  className={`relative rounded-lg px-3.5 py-1.5 text-[11px] font-semibold transition-colors duration-150 ${
+                    active_tab === key ? "text-flag-red" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {active_tab === key && (
+                    <motion.span
+                      layoutId="sys_tab_bg"
+                      className="absolute inset-0 rounded-lg bg-card shadow-sm"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    {icon}
+                    {label}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
-        </motion.header>
+        </motion.div>
 
-        {/* Content */}
+        {/* Database / Storage tabs */}
+        {active_tab === "database" && <DatabaseTab />}
+        {active_tab === "storage"  && <StorageTab />}
+
+        {/* Health content */}
+        {active_tab === "health" && (
+        <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
         {fetching && <Skeleton />}
 
         {error && (
@@ -472,10 +518,18 @@ const System = () => {
           </>
         )}
 
+        </div>
+        )}
+
       </main>
     </div>
   )
 }
+
+const ti = { width: 12, height: 12, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const }
+const TabHealthIcon  = () => <svg {...ti}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+const TabDbIcon      = () => <svg {...ti}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+const TabArchiveIcon = () => <svg {...ti}><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
 
 const RefreshIcon = ({ spinning }: { spinning: boolean }) => (
   <svg

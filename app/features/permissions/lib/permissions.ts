@@ -6,7 +6,7 @@ export type Permission =
   | "delete_any_comment"
   | "manage_columns"
 
-export type PageKey = "dashboard" | "workspace" | "analytics" | "git" | "users" | "settings" | "system" | "permissions" | "scanner"
+export type PageKey = "dashboard" | "workspace" | "git" | "users" | "settings" | "system" | "scanner"
 
 export type MemberPermissions = {
   user_id:            string
@@ -32,20 +32,18 @@ export const PERMISSION_META: Record<Permission, { label: string; desc: string }
   manage_columns:     { label: "Manage columns",    desc: "Add, rename and delete board columns" },
 }
 
-export const PAGES: PageKey[] = ["dashboard", "workspace", "analytics", "git", "users", "settings", "scanner", "system", "permissions"]
+export const PAGES: PageKey[] = ["dashboard", "workspace", "git", "users", "settings", "scanner", "system"]
 
-export const PRIVILEGED_PAGES = new Set<PageKey>(["system", "permissions"])
+export const PRIVILEGED_PAGES = new Set<PageKey>(["system"])
 
 export const PAGE_META: Record<PageKey, { label: string; desc: string }> = {
-  dashboard:   { label: "Dashboard",   desc: "Activity overview and team stats" },
-  workspace:   { label: "Workspace",   desc: "Kanban task board" },
-  analytics:   { label: "Analytics",   desc: "Workspace metrics and charts" },
-  git:         { label: "Git",         desc: "GitHub repos and activity feed" },
-  users:       { label: "Users",       desc: "Team member directory" },
-  settings:    { label: "Settings",    desc: "Account and profile settings" },
-  scanner:     { label: "Scanner",     desc: "Website URL parser and tech analyzer" },
-  system:      { label: "System",      desc: "Server stats and system health" },
-  permissions: { label: "Permissions", desc: "Manage team roles and access" },
+  dashboard: { label: "Dashboard", desc: "Activity overview and team stats" },
+  workspace: { label: "Workspace", desc: "Kanban task board and analytics" },
+  git:       { label: "Git",       desc: "GitHub repos and activity feed" },
+  users:     { label: "Users",     desc: "Team member directory and access control" },
+  settings:  { label: "Settings",  desc: "Account and profile settings" },
+  scanner:   { label: "Scanner",   desc: "Website URL parser and tech analyzer" },
+  system:    { label: "System",    desc: "Server stats, database and storage" },
 }
 
 export const default_permissions = (): Omit<MemberPermissions, "user_id" | "updated_at"> => ({
@@ -53,7 +51,7 @@ export const default_permissions = (): Omit<MemberPermissions, "user_id" | "upda
   delete_task:        false,
   delete_any_comment: false,
   manage_columns:     false,
-  hidden_pages:       ["system", "permissions"],
+  hidden_pages:       ["system"],
 })
 
 export type RoleKey = "member" | "admin"
@@ -78,7 +76,7 @@ export const default_role_permissions = (role: RoleKey): Omit<RolePermissions, "
   delete_task:        false,
   delete_any_comment: role === "admin",
   manage_columns:     role === "admin",
-  hidden_pages:       ["system", "permissions"],
+  hidden_pages:       ["system"],
 })
 
 export const api = {
