@@ -137,7 +137,7 @@ const FileCard = ({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group relative overflow-hidden rounded-2xl border border-line/50 bg-card/60 backdrop-blur-sm transition-all hover:border-line hover:shadow-lg"
+      className="group relative overflow-hidden rounded-2xl border border-line/50 bg-card transition-all hover:border-line hover:shadow-lg"
     >
       {/* Thumbnail / icon */}
       <button
@@ -458,7 +458,7 @@ export default function StoragePage() {
         <motion.div
           initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: ease_out }}
-          className="flex shrink-0 flex-col gap-3 border-b border-line bg-card/50 px-4 py-3 backdrop-blur-xl lg:px-6 lg:py-4"
+          className="flex shrink-0 flex-col gap-3 border-b border-line bg-card px-4 py-3 lg:px-6 lg:py-4"
         >
           <div className="flex items-center gap-3">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-flag-red/10 text-flag-red">

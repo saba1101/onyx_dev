@@ -99,7 +99,7 @@ const UserCard = ({
     <motion.div
       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease, delay: index * 0.04 }}
-      className="overflow-hidden rounded-2xl border border-line/50 bg-card/50 backdrop-blur-sm"
+      className="overflow-hidden rounded-2xl border border-line/50 bg-card"
     >
       <button
         type="button"
@@ -202,7 +202,7 @@ const RoleCard = ({
     <motion.div
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease }}
-      className="flex flex-col overflow-hidden rounded-2xl border border-line/50 bg-card/50 backdrop-blur-sm"
+      className="flex flex-col overflow-hidden rounded-2xl border border-line/50 bg-card"
     >
       {/* Card header */}
       <div className="flex items-center gap-3 border-b border-line/30 p-4">
@@ -464,7 +464,7 @@ export default function PermissionsPage() {
         <motion.div
           initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease }}
-          className="flex shrink-0 items-center gap-3 border-b border-line bg-card/50 px-4 py-3 backdrop-blur-xl lg:px-6 lg:py-4"
+          className="flex shrink-0 items-center gap-3 border-b border-line bg-card px-4 py-3 lg:px-6 lg:py-4"
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-flag-red/10 text-flag-red">
             <ShieldSvg />

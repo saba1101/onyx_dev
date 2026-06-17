@@ -609,7 +609,7 @@ export default function WorkspacePage() {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: ease_out }}
-          className="flex shrink-0 items-center justify-between gap-3 border-b border-line bg-card/50 px-4 py-3 backdrop-blur-xl lg:gap-4 lg:px-6 lg:py-4"
+          className="flex shrink-0 items-center justify-between gap-3 border-b border-line bg-card px-4 py-3 lg:gap-4 lg:px-6 lg:py-4"
         >
           <div className="flex items-center gap-3">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-flag-red/10 text-flag-red">

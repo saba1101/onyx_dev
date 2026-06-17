@@ -163,7 +163,7 @@ export const SideRail = () => {
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-30 flex items-center gap-3 border-b border-line bg-card/90 px-4 py-2.5 backdrop-blur-xl lg:hidden">
+      <div className="fixed inset-x-0 top-0 z-30 flex items-center gap-3 border-b border-line bg-card px-4 py-2.5 lg:hidden">
         <button
           type="button"
           onClick={() => set_mobile_open(true)}
@@ -198,7 +198,7 @@ export const SideRail = () => {
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col gap-1 border-r border-line bg-card px-3 py-5 transition-[transform,width] duration-300 ease-out lg:bg-card/50 lg:backdrop-blur-xl ${
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col gap-1 border-r border-line bg-card px-3 py-5 transition-[transform,width] duration-300 ease-out ${
           mobile_open ? "translate-x-0 w-64" : "-translate-x-full w-64"
         } lg:translate-x-0 ${collapsed ? "lg:w-[72px]" : "lg:w-52"}`}
       >
