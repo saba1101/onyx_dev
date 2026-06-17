@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "motion/react"
 import { useAuth } from "~/features/auth/lib/auth"
 import { useProfile } from "~/features/profile/lib/profile-context"
 import { SideRail } from "~/components/ui/side-rail"
-import { Modal } from "~/components/ui/modal"
 import { use_notify } from "~/hooks/use-notify"
 import { supabase } from "~/lib/supabase"
 import {
@@ -37,7 +36,7 @@ type StorageFile = {
   metadata:   FileMeta | null
   created_at: string
   updated_at: string
-  full_path:  string   // path relative to bucket root
+  full_path:  string
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -72,7 +71,6 @@ const list_bucket_files = async (bucket: string): Promise<StorageFile[]> => {
 
   await Promise.all(root.map(async item => {
     if (!item.id && !item.metadata) {
-      // subfolder — list its contents
       const { data: children } = await supabase.storage.from(bucket).list(item.name, {
         limit: 200, sortBy: { column: "created_at", order: "desc" },
       })
@@ -112,243 +110,213 @@ const get_url = async (bucket_name: string, is_public: boolean, path: string): P
   return data?.signedUrl ?? null
 }
 
-// ── File card ─────────────────────────────────────────────────────────────────
+// ── File row (left panel) ─────────────────────────────────────────────────────
 
-const FileCard = ({
-  file, bucket, is_public, on_preview, on_delete, on_reupload,
+const FileRow = ({
+  file, bucket, is_public, active, on_select,
 }: {
-  file:        StorageFile
-  bucket:      string
-  is_public:   boolean
-  on_preview:  (f: StorageFile) => void
-  on_delete:   (f: StorageFile) => void
-  on_reupload: (f: StorageFile) => void
+  file:      StorageFile
+  bucket:    string
+  is_public: boolean
+  active:    boolean
+  on_select: () => void
 }) => {
-  const [thumb_url, set_thumb_url] = useState<string | null>(null)
+  const [thumb, set_thumb] = useState<string | null>(null)
 
   useEffect(() => {
     if (!is_image(file)) return
-    get_url(bucket, is_public, file.full_path).then(url => set_thumb_url(url))
+    if (is_public) {
+      supabase.storage.from(bucket).getPublicUrl(file.full_path).data.publicUrl
+        && set_thumb(supabase.storage.from(bucket).getPublicUrl(file.full_path).data.publicUrl)
+    }
+    // private buckets: skip thumbnail in list (avoid N signed-URL calls)
   }, [file, bucket, is_public])
 
-  const file_ext = ext(file.full_path)
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="group relative overflow-hidden rounded-2xl border border-line/50 bg-card transition-all hover:border-line hover:shadow-lg"
+    <button
+      type="button"
+      onClick={on_select}
+      className={`flex w-full items-center gap-3 border-b border-line/30 px-4 py-3 text-left transition-colors ${
+        active
+          ? "bg-flag-red/8 border-l-2 border-l-flag-red"
+          : "hover:bg-line/20"
+      }`}
     >
-      {/* Thumbnail / icon */}
-      <button
-        type="button"
-        onClick={() => on_preview(file)}
-        className="block w-full"
-      >
-        <div className="relative flex h-40 w-full items-center justify-center overflow-hidden bg-line/10">
-          {thumb_url ? (
-            <img
-              src={thumb_url}
-              alt={file.name}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <FileTypeIcon mime={file.metadata?.mimetype ?? ""} />
-              {file_ext && (
-                <span className="rounded-md bg-line/40 px-2 py-0.5 font-mono text-[9px] font-bold uppercase text-muted">
-                  .{file_ext}
-                </span>
-              )}
-            </div>
-          )}
-          {/* Hover overlay */}
-          <div className="absolute inset-0 flex items-center justify-center bg-carbon-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-            <EyeIcon />
-          </div>
-        </div>
-      </button>
+      {/* Mini thumbnail or icon */}
+      <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-line/40 bg-line/20 flex items-center justify-center">
+        {thumb ? (
+          <img src={thumb} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <FileTypeIcon mime={file.metadata?.mimetype ?? ""} size={16} />
+        )}
+      </div>
 
-      {/* Info */}
-      <div className="px-3 py-2.5">
-        <p className="truncate text-[11px] font-semibold text-ink" title={file.full_path}>
+      {/* Name + meta */}
+      <div className="min-w-0 flex-1">
+        <p className={`truncate text-xs font-semibold ${active ? "text-flag-red" : "text-ink"}`}>
           {file.name}
         </p>
-        <p className="mt-0.5 truncate font-mono text-[9px] text-muted/60">{file.full_path}</p>
-        <div className="mt-1.5 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
-            {file.metadata?.size != null && (
-              <span className="text-[9px] text-muted">{fmt_bytes(file.metadata.size)}</span>
-            )}
-            {file.metadata?.mimetype && (
-              <>
-                <span className="text-muted/30">·</span>
-                <span className="text-[9px] text-muted/60">{file.metadata.mimetype.split("/")[1]}</span>
-              </>
-            )}
-          </div>
-          <span className="text-[9px] text-muted/40">{fmt_date(file.created_at)}</span>
+        <p className="mt-0.5 font-mono text-[9px] text-muted/50 truncate">{file.full_path}</p>
+        <div className="mt-0.5 flex items-center gap-1.5">
+          {file.metadata?.size != null && (
+            <span className="text-[9px] text-muted">{fmt_bytes(file.metadata.size)}</span>
+          )}
+          {file.created_at && (
+            <>
+              <span className="text-muted/30">·</span>
+              <span className="text-[9px] text-muted/50">{fmt_date(file.created_at)}</span>
+            </>
+          )}
         </div>
       </div>
-
-      {/* Action bar */}
-      <div className="flex items-center gap-1 border-t border-line/30 px-3 py-2 opacity-0 transition-opacity group-hover:opacity-100">
-        <button
-          type="button"
-          onClick={() => on_preview(file)}
-          className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium text-muted transition-colors hover:bg-line/40 hover:text-ink"
-          title="Preview"
-        >
-          <EyeIcon size={11} /> View
-        </button>
-        <button
-          type="button"
-          onClick={() => on_reupload(file)}
-          className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium text-muted transition-colors hover:bg-line/40 hover:text-ink"
-          title="Replace file"
-        >
-          <UploadIcon size={11} /> Replace
-        </button>
-        <button
-          type="button"
-          onClick={() => on_delete(file)}
-          className="ml-auto flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium text-muted transition-colors hover:bg-flag-red/10 hover:text-flag-red"
-          title="Delete"
-        >
-          <TrashIcon size={11} />
-        </button>
-      </div>
-    </motion.div>
+    </button>
   )
 }
 
-// ── Preview modal ─────────────────────────────────────────────────────────────
+// ── Details panel (right side) ────────────────────────────────────────────────
 
-const PreviewModal = ({
-  file, bucket, is_public, open, on_close, on_delete, on_reupload,
+const DetailsPanel = ({
+  file, url, is_public, bucket, copied, uploading,
+  on_copy, on_reupload, on_delete,
 }: {
-  file:        StorageFile | null
-  bucket:      string
-  is_public:   boolean
-  open:        boolean
-  on_close:    () => void
-  on_delete:   () => void
-  on_reupload: () => void
+  file:       StorageFile
+  url:        string | null
+  is_public:  boolean
+  bucket:     string
+  copied:     boolean
+  uploading:  boolean
+  on_copy:    () => void
+  on_reupload:() => void
+  on_delete:  () => void
 }) => {
-  const [url,             set_url]             = useState<string | null>(null)
-  const [copied,          set_copied]          = useState(false)
-  const [confirm_delete,  set_confirm_delete]  = useState(false)
+  const [confirm, set_confirm] = useState(false)
 
-  useEffect(() => {
-    if (!open || !file) { set_url(null); set_confirm_delete(false); return }
-    get_url(bucket, is_public, file.full_path).then(set_url)
-  }, [open, file, bucket, is_public])
-
-  const copy_url = async () => {
-    if (!url) return
-    await navigator.clipboard.writeText(url)
-    set_copied(true)
-    setTimeout(() => set_copied(false), 2000)
-  }
-
-  if (!file) return null
+  useEffect(() => { set_confirm(false) }, [file.full_path])
 
   const img = is_image(file)
 
   return (
-    <Modal open={open} on_close={on_close} title={file.name} description={bucket} size="lg">
-      <div className="flex flex-col gap-4 lg:flex-row">
-        {/* Preview pane */}
-        <div className="flex min-h-[200px] flex-1 items-center justify-center overflow-hidden rounded-xl border border-line/30 bg-line/10">
+    <div className="flex h-full flex-col overflow-hidden">
+      {/* Preview area */}
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-line/5">
+        <AnimatePresence mode="wait">
           {img && url ? (
-            <img src={url} alt={file.name} className="max-h-[360px] w-full object-contain" />
+            <motion.img
+              key={url}
+              src={url}
+              alt={file.name}
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: ease_out }}
+              className="max-h-full max-w-full object-contain p-6"
+            />
           ) : (
-            <div className="flex flex-col items-center gap-3 py-12">
-              <FileTypeIcon mime={file.metadata?.mimetype ?? ""} size={48} />
-              <span className="font-mono text-xs text-muted">{file.metadata?.mimetype ?? "unknown"}</span>
-            </div>
+            <motion.div
+              key="icon"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center gap-4 py-16"
+            >
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-line/40 bg-line/20">
+                <FileTypeIcon mime={file.metadata?.mimetype ?? ""} size={36} />
+              </div>
+              <span className="font-mono text-xs text-muted">{file.metadata?.mimetype ?? "unknown type"}</span>
+            </motion.div>
           )}
+        </AnimatePresence>
+
+        {/* Badge: public / private */}
+        <span className={`absolute right-4 top-4 rounded-full px-2.5 py-1 text-[9px] font-bold ${
+          is_public ? "bg-light-green/15 text-light-green" : "bg-line/40 text-muted"
+        }`}>
+          {is_public ? "public" : "private"}
+        </span>
+      </div>
+
+      {/* Metadata + actions */}
+      <div className="shrink-0 border-t border-line bg-card px-5 py-4">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold text-ink">{file.name}</p>
+            <p className="mt-0.5 truncate font-mono text-[10px] text-muted">{file.full_path}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 text-[9px] text-muted">
+            {file.metadata?.size != null && (
+              <span className="rounded-md border border-line/50 bg-line/20 px-2 py-1 font-mono">
+                {fmt_bytes(file.metadata.size)}
+              </span>
+            )}
+            {file.metadata?.mimetype && (
+              <span className="rounded-md border border-line/50 bg-line/20 px-2 py-1 font-mono">
+                {file.metadata.mimetype.split("/")[1]}
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Metadata + actions */}
-        <div className="flex w-full flex-col gap-3 lg:w-56">
-          <div className="space-y-2 rounded-xl border border-line/30 bg-line/10 p-3">
-            <MetaRow label="File" value={file.name} />
-            <MetaRow label="Path" value={file.full_path} mono />
-            <MetaRow label="Type" value={file.metadata?.mimetype ?? "—"} />
-            <MetaRow label="Size" value={file.metadata?.size != null ? fmt_bytes(file.metadata.size) : "—"} />
-            <MetaRow label="Bucket" value={bucket} />
-            <MetaRow label="Access" value={is_public ? "Public" : "Private"} />
-            <MetaRow label="Uploaded" value={fmt_date(file.created_at)} />
-          </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {/* Copy URL */}
+          <button
+            type="button"
+            onClick={on_copy}
+            disabled={!url}
+            className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-all disabled:opacity-30 ${
+              copied
+                ? "border-light-green/30 bg-light-green/10 text-light-green"
+                : "border-line bg-line/20 text-muted hover:text-ink"
+            }`}
+          >
+            {copied ? <CheckIcon size={12} /> : <ExternalLinkIcon size={12} />}
+            {copied ? "Copied" : "Copy URL"}
+          </button>
 
-          {/* URL copy */}
-          {url && (
-            <button
-              type="button"
-              onClick={copy_url}
-              className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium transition-all ${
-                copied
-                  ? "border-light-green/30 bg-light-green/10 text-light-green"
-                  : "border-line bg-line/20 text-muted hover:text-ink"
-              }`}
-            >
-              {copied ? <CheckIcon size={12} /> : <ExternalLinkIcon size={12} />}
-              {copied ? "Copied!" : "Copy URL"}
-            </button>
-          )}
-
-          {/* Re-upload */}
+          {/* Replace */}
           <button
             type="button"
             onClick={on_reupload}
-            className="flex items-center gap-2 rounded-xl border border-line bg-line/20 px-3 py-2.5 text-xs font-medium text-muted transition-colors hover:text-ink"
+            disabled={uploading}
+            className="flex items-center justify-center gap-2 rounded-xl border border-line bg-line/20 px-3 py-2 text-xs font-medium text-muted transition-colors hover:text-ink disabled:opacity-40"
           >
-            <UploadIcon size={12} /> Replace file
+            {uploading
+              ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted/30 border-t-muted" />
+              : <UploadIcon size={12} />
+            }
+            Replace
           </button>
 
           {/* Delete */}
-          {!confirm_delete ? (
+          {!confirm ? (
             <button
               type="button"
-              onClick={() => set_confirm_delete(true)}
-              className="flex items-center gap-2 rounded-xl border border-flag-red/20 bg-flag-red/8 px-3 py-2.5 text-xs font-medium text-flag-red transition-colors hover:bg-flag-red/15"
+              onClick={() => set_confirm(true)}
+              className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-flag-red/20 bg-flag-red/8 px-3 py-2 text-xs font-medium text-flag-red transition-colors hover:bg-flag-red/15 sm:col-span-2"
             >
               <TrashIcon size={12} /> Delete file
             </button>
           ) : (
-            <div className="flex flex-col gap-1.5">
-              <p className="text-center text-[10px] text-muted">Permanently delete?</p>
-              <div className="flex gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => set_confirm_delete(false)}
-                  className="flex-1 rounded-xl border border-line py-2 text-[10px] font-medium text-muted"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={on_delete}
-                  className="flex-1 rounded-xl bg-flag-red py-2 text-[10px] font-medium text-white"
-                >
-                  Delete
-                </button>
-              </div>
+            <div className="col-span-2 flex gap-2 sm:col-span-2">
+              <button
+                type="button"
+                onClick={() => set_confirm(false)}
+                className="flex-1 rounded-xl border border-line py-2 text-xs font-medium text-muted transition-colors hover:text-ink"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={on_delete}
+                className="flex-1 rounded-xl bg-flag-red py-2 text-xs font-medium text-white transition-opacity hover:opacity-80"
+              >
+                Confirm delete
+              </button>
             </div>
           )}
         </div>
       </div>
-    </Modal>
+    </div>
   )
 }
-
-const MetaRow = ({ label, value, mono }: { label: string; value: string; mono?: boolean }) => (
-  <div>
-    <p className="text-[8px] font-bold uppercase tracking-wider text-muted/40">{label}</p>
-    <p className={`mt-0.5 truncate text-[10px] text-ink ${mono ? "font-mono" : ""}`}>{value}</p>
-  </div>
-)
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -357,14 +325,16 @@ export default function StoragePage() {
   const { profile } = useProfile()
   const notify      = use_notify()
 
-  const [buckets,        set_buckets]        = useState<Bucket[]>([])
-  const [active_bucket,  set_active_bucket]  = useState<string>("")
-  const [files,          set_files]          = useState<StorageFile[]>([])
-  const [loading,        set_loading]        = useState(true)
-  const [files_loading,  set_files_loading]  = useState(false)
-  const [search,         set_search]         = useState("")
-  const [preview_file,   set_preview_file]   = useState<StorageFile | null>(null)
-  const [uploading,      set_uploading]      = useState(false)
+  const [buckets,       set_buckets]       = useState<Bucket[]>([])
+  const [active_bucket, set_active_bucket] = useState<string>("")
+  const [files,         set_files]         = useState<StorageFile[]>([])
+  const [loading,       set_loading]       = useState(true)
+  const [files_loading, set_files_loading] = useState(false)
+  const [search,        set_search]        = useState("")
+  const [selected,      set_selected]      = useState<StorageFile | null>(null)
+  const [selected_url,  set_selected_url]  = useState<string | null>(null)
+  const [copied,        set_copied]        = useState(false)
+  const [uploading,     set_uploading]     = useState(false)
 
   const upload_ref    = useRef<HTMLInputElement>(null)
   const reupload_file = useRef<StorageFile | null>(null)
@@ -373,10 +343,9 @@ export default function StoragePage() {
   if (profile && profile.role !== "root") return <Navigate to="/" replace />
 
   const active_bucket_obj = buckets.find(b => b.id === active_bucket)
+  const is_public = active_bucket_obj?.public ?? false
 
-  // ── Fetch buckets ──────────────────────────────────────────────────────────
-
-  // listBuckets() requires service-role key — hardcode known buckets instead
+  // listBuckets() requires service-role key — hardcode known buckets
   useEffect(() => {
     const known: Bucket[] = [
       { id: "avatars",  name: "avatars",  public: true,  file_size_limit: 2097152 },
@@ -386,8 +355,6 @@ export default function StoragePage() {
     set_active_bucket(known[0].id)
     set_loading(false)
   }, [])
-
-  // ── Fetch files on bucket change ───────────────────────────────────────────
 
   const fetch_files = useCallback(async (bucket_id: string) => {
     set_files_loading(true)
@@ -399,16 +366,28 @@ export default function StoragePage() {
   useEffect(() => {
     if (!active_bucket) return
     fetch_files(active_bucket)
+    set_selected(null)
   }, [active_bucket, fetch_files])
+
+  // Fetch URL when selected file changes
+  useEffect(() => {
+    if (!selected) { set_selected_url(null); return }
+    get_url(active_bucket, is_public, selected.full_path).then(set_selected_url)
+  }, [selected, active_bucket, is_public])
 
   // ── Delete ─────────────────────────────────────────────────────────────────
 
   const handle_delete = async (file: StorageFile) => {
-    const { error } = await supabase.storage.from(active_bucket).remove([file.full_path])
+    const { data, error } = await supabase.storage.from(active_bucket).remove([file.full_path])
     if (error) { notify({ tone: "error", title: "Delete failed", message: error.message }); return }
+    if (!data || data.length === 0) {
+      notify({ tone: "error", title: "Delete failed", message: "Permission denied or file not found." })
+      return
+    }
     notify({ tone: "success", title: "File deleted" })
-    set_preview_file(null)
-    fetch_files(active_bucket)
+    set_files(prev => prev.filter(f => f.full_path !== file.full_path))
+    set_selected(null)
+    set_selected_url(null)
   }
 
   // ── Upload / re-upload ─────────────────────────────────────────────────────
@@ -435,10 +414,14 @@ export default function StoragePage() {
 
     if (error) { notify({ tone: "error", title: "Upload failed", message: error.message }); return }
     notify({ tone: "success", title: replace ? "File replaced" : "File uploaded" })
-    if (preview_file && replace && preview_file.full_path === replace.full_path) {
-      set_preview_file(null)
-    }
-    fetch_files(active_bucket)
+    await fetch_files(active_bucket)
+  }
+
+  const handle_copy_url = async () => {
+    if (!selected_url) return
+    await navigator.clipboard.writeText(selected_url)
+    set_copied(true)
+    setTimeout(() => set_copied(false), 2000)
   }
 
   // ── Filtered files ─────────────────────────────────────────────────────────
@@ -537,55 +520,102 @@ export default function StoragePage() {
           )}
         </motion.div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {loading || files_loading ? (
-            <div className="flex h-48 items-center justify-center">
-              <span className="h-6 w-6 animate-spin rounded-full border-2 border-flag-red/20 border-t-flag-red" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex h-48 flex-col items-center justify-center gap-3 text-center">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-line/40 text-muted">
-                <BucketIcon size={20} />
-              </span>
-              <p className="text-sm font-semibold text-ink">
-                {search ? "No files match your search" : "No files in this bucket"}
-              </p>
-              {!search && (
-                <button
-                  type="button"
-                  onClick={() => trigger_upload(null)}
-                  className="text-xs text-flag-red underline underline-offset-2"
-                >
-                  Upload the first file
-                </button>
+        {/* Split-panel content */}
+        {loading || files_loading ? (
+          <div className="flex flex-1 items-center justify-center">
+            <span className="h-6 w-6 animate-spin rounded-full border-2 border-flag-red/20 border-t-flag-red" />
+          </div>
+        ) : (
+          <div className="flex flex-1 overflow-hidden">
+
+            {/* Left panel — file list */}
+            <div className="w-72 shrink-0 overflow-y-auto border-r border-line">
+              {filtered.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 px-4 py-16 text-center">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-line/30 text-muted">
+                    <BucketIcon size={18} />
+                  </span>
+                  <p className="text-xs font-semibold text-ink">
+                    {search ? "No matches" : "Empty bucket"}
+                  </p>
+                  {!search && (
+                    <button
+                      type="button"
+                      onClick={() => trigger_upload(null)}
+                      className="text-[11px] text-flag-red underline underline-offset-2"
+                    >
+                      Upload first file
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {filtered.map(file => (
+                    <motion.div
+                      key={file.full_path}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -8 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <FileRow
+                        file={file}
+                        bucket={active_bucket}
+                        is_public={is_public}
+                        active={selected?.full_path === file.full_path}
+                        on_select={() => set_selected(file)}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               )}
             </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              <AnimatePresence mode="popLayout">
-                {filtered.map((file, i) => (
+
+            {/* Right panel — preview / empty state */}
+            <div className="flex flex-1 overflow-hidden">
+              <AnimatePresence mode="wait">
+                {selected ? (
                   <motion.div
-                    key={file.full_path}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.15, delay: i * 0.02 }}
+                    key={selected.full_path}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex flex-1 flex-col overflow-hidden"
                   >
-                    <FileCard
-                      file={file}
+                    <DetailsPanel
+                      file={selected}
+                      url={selected_url}
+                      is_public={is_public}
                       bucket={active_bucket}
-                      is_public={active_bucket_obj?.public ?? false}
-                      on_preview={f => set_preview_file(f)}
-                      on_delete={f => handle_delete(f)}
-                      on_reupload={f => trigger_upload(f)}
+                      copied={copied}
+                      uploading={uploading}
+                      on_copy={handle_copy_url}
+                      on_reupload={() => trigger_upload(selected)}
+                      on_delete={() => handle_delete(selected)}
                     />
                   </motion.div>
-                ))}
+                ) : (
+                  <motion.div
+                    key="empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex flex-1 flex-col items-center justify-center gap-3 text-center"
+                  >
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-line/40 bg-line/20 text-muted">
+                      <BucketIcon size={24} />
+                    </div>
+                    <p className="text-sm font-semibold text-ink">Select a file</p>
+                    <p className="text-xs text-muted">
+                      Click any file in the list to preview it
+                    </p>
+                  </motion.div>
+                )}
               </AnimatePresence>
             </div>
-          )}
-        </div>
+
+          </div>
+        )}
       </main>
 
       {/* Hidden file input */}
@@ -594,17 +624,6 @@ export default function StoragePage() {
         type="file"
         className="hidden"
         onChange={handle_file_select}
-      />
-
-      {/* Preview modal */}
-      <PreviewModal
-        file={preview_file}
-        bucket={active_bucket}
-        is_public={active_bucket_obj?.public ?? false}
-        open={!!preview_file}
-        on_close={() => set_preview_file(null)}
-        on_delete={() => preview_file && handle_delete(preview_file)}
-        on_reupload={() => { if (preview_file) { set_preview_file(null); trigger_upload(preview_file) } }}
       />
     </div>
   )
@@ -617,13 +636,6 @@ const ip = (size = 16) => ({
   stroke: "currentColor", strokeWidth: 1.8,
   strokeLinecap: "round" as const, strokeLinejoin: "round" as const,
 })
-
-const EyeIcon = ({ size = 16 }: { size?: number }) => (
-  <svg {...ip(size)}>
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-)
 
 const BucketIcon = ({ size = 16 }: { size?: number }) => (
   <svg {...ip(size)}>
