@@ -1038,11 +1038,12 @@ const Git = () => {
     }
   }, [])
 
-  // Increment auth_trigger only when we receive a genuinely new provider_token
-  // from GitHub OAuth. supabase-js can fire SIGNED_IN during silent token
-  // refreshes on tab-return, so we guard against that by only reacting when
-  // the token string itself changed from what we last loaded with.
-  const last_provider_token = useRef<string | null>(null)
+  // Supabase does NOT persist provider_token to localStorage — it is only
+  // available on the session object inside onAuthStateChange at SIGNED_IN.
+  // Capture it here into a ref so the load effect can use it before it vanishes.
+  const captured_provider_token = useRef<string | null>(null)
+  const last_provider_token     = useRef<string | null>(null)
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (
@@ -1050,6 +1051,7 @@ const Git = () => {
         session?.provider_token &&
         session.provider_token !== last_provider_token.current
       ) {
+        captured_provider_token.current = session.provider_token
         set_trigger(n => n + 1)
       }
     })
@@ -1072,10 +1074,11 @@ const Git = () => {
         return
       }
 
-      // 1. Fresh OAuth token from current session
-      // 2. Stored token saved from a previous OAuth session
-      const session_token = await get_github_token()
-      const token         = session_token ?? await get_stored_token(user.id)
+      // 1. Token captured directly from onAuthStateChange (provider_token is lost
+      //    by the time getSession() is called, so we must grab it from the event)
+      // 2. Token stored in profiles from a previous successful OAuth session
+      const oauth_token = captured_provider_token.current
+      const token       = oauth_token ?? await get_stored_token(user.id)
 
       if (!token) {
         set_state({ phase: "disconnected" })
@@ -1090,11 +1093,12 @@ const Git = () => {
           gh_repos(token),
         ])
 
-        // Persist the token and record it so the auth listener can tell whether
-        // a future SIGNED_IN carries a genuinely new token or the same one.
-        if (session_token) {
-          last_provider_token.current = session_token
-          save_github_token(user.id, session_token, ghuser.login)
+        // Persist token to DB so it survives page reloads (provider_token is
+        // session-only and lost after OAuth redirect completes).
+        if (oauth_token) {
+          last_provider_token.current     = oauth_token
+          captured_provider_token.current = null
+          await save_github_token(user.id, oauth_token, ghuser.login)
         }
 
         const originals    = repos.filter(r => !r.fork)

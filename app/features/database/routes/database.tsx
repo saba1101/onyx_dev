@@ -578,13 +578,18 @@ const STATIC_EDGES: Edge[] = EDGE_DEF.map(def => ({
 type TableData = { rows: Record<string, unknown>[]; total: number }
 
 export default function DatabasePage() {
-  const { user }    = useAuth()
-  const { profile } = useProfile()
+  const { user, loading: auth_loading }       = useAuth()
+  const { profile, loading: profile_loading } = useProfile()
 
   const [data,    set_data]    = useState<Record<string, TableData>>({})
   const [loading, set_loading] = useState(true)
   const [modal,   set_modal]   = useState<ModalState | null>(null)
 
+  if (auth_loading || profile_loading) return (
+    <div className="flex h-screen items-center justify-center">
+      <span className="h-6 w-6 animate-spin rounded-full border-2 border-flag-red/20 border-t-flag-red" />
+    </div>
+  )
   if (!user) return <Navigate to="/login" replace />
   if (profile && profile.role !== "root") return <Navigate to="/" replace />
 

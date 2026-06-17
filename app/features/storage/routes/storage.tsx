@@ -321,9 +321,9 @@ const DetailsPanel = ({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function StoragePage() {
-  const { user }    = useAuth()
-  const { profile } = useProfile()
-  const notify      = use_notify()
+  const { user, loading: auth_loading }       = useAuth()
+  const { profile, loading: profile_loading } = useProfile()
+  const notify                                = use_notify()
 
   const [buckets,       set_buckets]       = useState<Bucket[]>([])
   const [active_bucket, set_active_bucket] = useState<string>("")
@@ -339,6 +339,11 @@ export default function StoragePage() {
   const upload_ref    = useRef<HTMLInputElement>(null)
   const reupload_file = useRef<StorageFile | null>(null)
 
+  if (auth_loading || profile_loading) return (
+    <div className="flex h-screen items-center justify-center">
+      <span className="h-6 w-6 animate-spin rounded-full border-2 border-flag-red/20 border-t-flag-red" />
+    </div>
+  )
   if (!user) return <Navigate to="/login" replace />
   if (profile && profile.role !== "root") return <Navigate to="/" replace />
 
