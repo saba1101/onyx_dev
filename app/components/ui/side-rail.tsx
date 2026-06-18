@@ -13,6 +13,7 @@ import {
   GitBranchIcon,
   SlidersIcon,
   SearchIcon,
+  MapPinIcon,
 } from "~/components/ui/icons";
 import { usePermissionsCtx } from "~/features/permissions/lib/permissions-context";
 import { use_fullscreen } from "~/hooks/use-fullscreen";
@@ -105,6 +106,7 @@ const PAGE_PATH_TO_KEY: Record<string, string> = {
   "/git":       "git",
   "/users":     "users",
   "/inspector": "scanner",
+  "/locations": "locations",
   "/settings":  "settings",
 };
 
@@ -138,6 +140,7 @@ export const SideRail = () => {
     { to: "/workspace", label: "Workspace",              icon: SlidersIcon  },
     { to: "/system",    label: "System",                 icon: ServerIcon   },
     { to: "/inspector", label: "Scanner",                icon: SearchIcon   },
+    { to: "/locations", label: "Locations",              icon: MapPinIcon   },
     { to: "/settings",  label: "Settings",               icon: GearIcon     },
   ];
 

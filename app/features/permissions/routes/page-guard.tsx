@@ -10,6 +10,7 @@ const PATH_TO_KEY: Record<string, string> = {
   "/settings":  "settings",
   "/system":    "system",
   "/inspector": "scanner",
+  "/locations": "locations",
 }
 
 export default function PageGuard() {

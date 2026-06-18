@@ -16,5 +16,6 @@ export default [
     route("system",    "features/system/routes/system.tsx"),
     route("workspace", "features/workspace/routes/workspace.tsx"),
     route("inspector", "features/inspector/routes/inspector.tsx"),
+    route("locations", "features/locations/routes/locations.tsx"),
   ]),
 ] satisfies RouteConfig;
