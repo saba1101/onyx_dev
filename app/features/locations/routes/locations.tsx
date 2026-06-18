@@ -227,7 +227,7 @@ export default function LocationsPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden pt-[52px] lg:pt-0">
+    <div className="flex h-dvh flex-col overflow-hidden">
 
       {/* ── Header ── */}
       <div className="shrink-0 border-b border-line bg-card px-4 py-2.5 lg:px-5 lg:py-3">
@@ -412,7 +412,7 @@ export default function LocationsPage() {
             <button
               type="button"
               onClick={() => set_sheet(true)}
-              className="absolute bottom-4 left-1/2 z-[400] -translate-x-1/2 flex items-center gap-2 rounded-full border border-line bg-card/90 px-4 py-2 text-xs font-semibold text-ink shadow-lg backdrop-blur-sm transition-colors hover:bg-card lg:hidden"
+              className="fixed bottom-6 left-1/2 z-[400] -translate-x-1/2 flex items-center gap-2 rounded-full border border-line bg-card/90 px-4 py-2.5 text-xs font-semibold text-ink shadow-xl backdrop-blur-sm transition-colors hover:bg-card lg:hidden"
             >
               <MapPinIcon size={12} className="text-flag-red" />
               {locations.length} sharing
