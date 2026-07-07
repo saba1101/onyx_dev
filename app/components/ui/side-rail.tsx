@@ -15,7 +15,7 @@ import {
   SearchIcon,
   MapPinIcon,
 } from "~/components/ui/icons";
-import { usePermissionsCtx } from "~/features/permissions/lib/permissions-context";
+import { usePermissionsStore } from "~/features/permissions/lib/permissions-store";
 import { use_fullscreen } from "~/hooks/use-fullscreen";
 
 const COLLAPSE_KEY = "rail_collapsed";
@@ -118,7 +118,8 @@ export const SideRail = () => {
   const [mobile_open, set_mobile_open] = useState(false);
 
   const is_root = profile?.role === "root";
-  const perms   = usePermissionsCtx();
+  const loaded       = usePermissionsStore(s => s.loaded)
+  const hidden_pages = usePermissionsStore(s => s.hidden_pages)
   const { is_fullscreen, toggle: toggle_fullscreen } = use_fullscreen();
 
   useEffect(() => {
@@ -149,8 +150,8 @@ export const SideRail = () => {
     ? all_items
     : all_items.filter(item => {
         if (PRIVILEGED.has(item.to)) return false;
-        if (!perms.loaded) return true;
-        return !perms.hidden_pages.includes(PAGE_PATH_TO_KEY[item.to] ?? "");
+        if (!loaded) return true;
+        return !hidden_pages.includes(PAGE_PATH_TO_KEY[item.to] ?? "");
       });
 
   const label_hidden = collapsed ? "lg:hidden" : "";

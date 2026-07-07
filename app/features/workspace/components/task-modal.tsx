@@ -12,7 +12,7 @@ import {
   STATUS_COLORS, TYPE_META, COLOR_OPTIONS,
   type WTask, type WStatus, type WComment, type WProfile, type TaskType, type StatusColor,
 } from "~/features/workspace/lib/workspace"
-import type { PermissionsState } from "~/features/permissions/lib/use-permissions"
+import type { PermissionsState } from "~/features/permissions/lib/permissions-store"
 
 // ── Mini avatar ───────────────────────────────────────────────────────────────
 

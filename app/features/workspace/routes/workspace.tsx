@@ -10,7 +10,7 @@ import { PlusIcon, SlidersIcon, PencilIcon, XIcon, TrashIcon } from "~/component
 import { SearchInput } from "~/components/ui/search-input"
 import { TaskModal, StatusModal } from "~/features/workspace/components/task-modal"
 import { PermissionModal } from "~/components/ui/permission-modal"
-import { usePermissions } from "~/features/permissions/lib/use-permissions"
+import { usePermissionsStore } from "~/features/permissions/lib/permissions-store"
 import {
   api, fmt_rel, STATUS_COLORS, TYPE_META,
   type WStatus, type WTask, type WProfile,
@@ -435,8 +435,8 @@ export default function WorkspacePage() {
   const [active_tab, set_active_tab] = useState<"board" | "analytics">("board")
   const [search,     set_search]     = useState("")
 
-  const is_root   = profile?.role === "root"
-  const permissions = usePermissions(user?.id ?? null, is_root)
+  const is_root     = profile?.role === "root"
+  const permissions = usePermissionsStore()
 
   // ── Load ──────────────────────────────────────────────────────────────────
 
