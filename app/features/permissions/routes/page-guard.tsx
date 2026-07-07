@@ -11,6 +11,7 @@ const PATH_TO_KEY: Record<string, string> = {
   "/system":    "system",
   "/inspector": "scanner",
   "/locations": "locations",
+  "/planning":  "planning",
 }
 
 export default function PageGuard() {

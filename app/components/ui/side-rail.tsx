@@ -107,6 +107,7 @@ const PAGE_PATH_TO_KEY: Record<string, string> = {
   "/users":     "users",
   "/inspector": "scanner",
   "/locations": "locations",
+  "/planning":  "planning",
   "/settings":  "settings",
 };
 
@@ -142,6 +143,7 @@ export const SideRail = () => {
     { to: "/system",    label: "System",                 icon: ServerIcon   },
     { to: "/inspector", label: "Scanner",                icon: SearchIcon   },
     { to: "/locations", label: "Locations",              icon: MapPinIcon   },
+    { to: "/planning",  label: "Flow Map",               icon: NetworkIcon  },
     { to: "/settings",  label: "Settings",               icon: GearIcon     },
   ];
 
@@ -352,5 +354,16 @@ const ExitFullscreenIcon = () => (
     <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
     <path d="M3 16h3a2 2 0 0 1 2 2v3" />
     <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+  </svg>
+);
+
+const NetworkIcon = () => (
+  <svg {...icon_props}>
+    <circle cx="12" cy="5"  r="2" />
+    <circle cx="5"  cy="19" r="2" />
+    <circle cx="19" cy="19" r="2" />
+    <line x1="12" y1="7"  x2="5"  y2="17" />
+    <line x1="12" y1="7"  x2="19" y2="17" />
+    <line x1="5"  y1="19" x2="19" y2="19" />
   </svg>
 );
