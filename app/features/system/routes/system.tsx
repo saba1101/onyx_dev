@@ -416,7 +416,7 @@ const System = () => {
         )}
 
         {stats && (
-          <>
+          <div className="space-y-6">
             {/* ── Stat tiles ── */}
             <motion.div {...fade(0.05)} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <Tile
@@ -515,7 +515,7 @@ const System = () => {
                 </Card>
               </motion.div>
             )}
-          </>
+          </div>
         )}
 
         </div>
