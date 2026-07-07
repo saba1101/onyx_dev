@@ -24,14 +24,15 @@ const ease = [0.22, 1, 0.36, 1] as const
 // ── CSS overrides ─────────────────────────────────────────────────────────────
 
 const flow_css = `
-  .react-flow__controls { box-shadow:none!important; border:1px solid hsl(220 13% 20%)!important; border-radius:10px!important; overflow:hidden; }
-  .react-flow__controls-button { background:hsl(220 13% 11%)!important; border-bottom:1px solid hsl(220 13% 20%)!important; color:hsl(220 13% 70%)!important; fill:hsl(220 13% 70%)!important; width:28px!important; height:28px!important; }
-  .react-flow__controls-button:hover { background:hsl(220 13% 17%)!important; color:hsl(220 13% 90%)!important; fill:hsl(220 13% 90%)!important; }
+  .react-flow__controls { box-shadow:none!important; border:1px solid var(--color-line)!important; border-radius:10px!important; overflow:hidden; }
+  .react-flow__controls-button { background:var(--color-card)!important; border-bottom:1px solid var(--color-line)!important; color:var(--color-muted)!important; fill:var(--color-muted)!important; width:28px!important; height:28px!important; }
+  .react-flow__controls-button:hover { background:var(--surface-line)!important; color:var(--color-ink)!important; fill:var(--color-ink)!important; }
   .react-flow__controls-button svg { max-width:12px; max-height:12px; fill:inherit!important; }
-  .react-flow__edge-path { stroke:hsl(220 13% 38%)!important; stroke-width:1.5!important; }
-  .react-flow__edge.selected .react-flow__edge-path { stroke:hsl(355 81% 47%)!important; }
-  .react-flow__connection-path { stroke:hsl(355 81% 47%)!important; stroke-width:1.5!important; }
-  .react-flow__minimap { border-radius:10px!important; border:1px solid hsl(220 13% 20%)!important; overflow:hidden; }
+  .react-flow__edge-path { stroke:var(--color-muted)!important; stroke-width:1.5!important; }
+  .react-flow__edge.selected .react-flow__edge-path { stroke:var(--color-flag-red)!important; }
+  .react-flow__connection-path { stroke:var(--color-flag-red)!important; stroke-width:1.5!important; }
+  .react-flow__minimap { border-radius:10px!important; border:1px solid var(--color-line)!important; overflow:hidden; }
+  @media (max-width:1023px) { .react-flow__minimap { display:none!important; } }
 `
 
 // ── Canvas context (read-only gate) ───────────────────────────────────────────
@@ -332,7 +333,7 @@ function MoreOptionsMenu({ board, is_creator, on_delete, on_manage_editors, on_c
         ref={btn_ref}
         type="button"
         onClick={open_menu}
-        className="cursor-pointer rounded p-0.5 text-muted opacity-0 transition-opacity group-hover:opacity-100 hover:text-ink"
+        className="cursor-pointer rounded p-0.5 text-muted opacity-100 transition-opacity hover:text-ink lg:opacity-0 lg:group-hover:opacity-100"
       >
         <EditIcon />
       </button>
@@ -344,21 +345,24 @@ function MoreOptionsMenu({ board, is_creator, on_delete, on_manage_editors, on_c
 // ── Board sidebar ─────────────────────────────────────────────────────────────
 
 type BoardSidebarProps = {
-  boards:             PlanBoard[]
-  active_id:          string | null
-  user_id:            string
-  on_select:          (b: PlanBoard) => void
-  on_create:          (name: string, visibility: BoardVisibility) => void
-  on_rename:          (id: string, name: string) => void
-  on_delete:             (id: string) => void
-  on_manage_editors:     (b: PlanBoard) => void
-  on_change_visibility:  (b: PlanBoard) => void
-  creating:              boolean
+  boards:               PlanBoard[]
+  active_id:            string | null
+  user_id:              string
+  on_select:            (b: PlanBoard) => void
+  on_create:            (name: string, visibility: BoardVisibility) => void
+  on_rename:            (id: string, name: string) => void
+  on_delete:            (id: string) => void
+  on_manage_editors:    (b: PlanBoard) => void
+  on_change_visibility: (b: PlanBoard) => void
+  creating:             boolean
+  mobile_open:          boolean
+  on_mobile_close:      () => void
 }
 
 function BoardSidebar({
   boards, active_id, user_id, on_select, on_create, on_rename,
   on_delete, on_manage_editors, on_change_visibility, creating,
+  mobile_open, on_mobile_close,
 }: BoardSidebarProps) {
   const [show_form,      set_show_form]      = useState(false)
   const [rename_id,      set_rename_id]      = useState<string | null>(null)
@@ -389,17 +393,26 @@ function BoardSidebar({
   }
 
   return (
-    <aside className="flex h-full w-56 shrink-0 flex-col border-r border-line bg-card">
+    <aside className={`flex shrink-0 flex-col border-r border-line bg-card transition-transform duration-300 ease-out fixed bottom-0 left-0 top-14 z-50 w-64 ${mobile_open ? "translate-x-0" : "-translate-x-full"} lg:relative lg:inset-auto lg:z-auto lg:h-full lg:w-56 lg:translate-x-0`}>
       <div className="flex items-center justify-between border-b border-line px-4 py-3.5">
         <span className="text-xs font-semibold uppercase tracking-widest text-muted">Flow Maps</span>
-        <button
-          type="button" title="New board"
-          onClick={() => set_show_form(v => !v)}
-          disabled={creating}
-          className={`grid h-6 w-6 cursor-pointer place-items-center rounded-md transition-colors disabled:opacity-40 ${show_form ? "bg-flag-red/10 text-flag-red" : "text-muted hover:bg-line/50 hover:text-ink"}`}
-        >
-          <PlusIcon />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button" title="New board"
+            onClick={() => set_show_form(v => !v)}
+            disabled={creating}
+            className={`grid h-6 w-6 cursor-pointer place-items-center rounded-md transition-colors disabled:opacity-40 ${show_form ? "bg-flag-red/10 text-flag-red" : "text-muted hover:bg-line/50 hover:text-ink"}`}
+          >
+            <PlusIcon />
+          </button>
+          <button
+            type="button" title="Close"
+            onClick={on_mobile_close}
+            className="grid h-6 w-6 cursor-pointer place-items-center rounded-md text-muted transition-colors hover:bg-line/50 hover:text-ink lg:hidden"
+          >
+            <XIcon />
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -668,22 +681,28 @@ function Avatar({ profile }: { profile: BoardEditorProfile | null }) {
 
 // ── Toolbar ───────────────────────────────────────────────────────────────────
 
-function Toolbar({ board, sel_color, on_color, on_add, on_delete_sel, has_selection, saving, node_count, can_edit }: {
-  board:         PlanBoard
-  sel_color:     NodeColorKey
-  on_color:      (c: NodeColorKey) => void
-  on_add:        () => void
-  on_delete_sel: () => void
-  has_selection: boolean
-  saving:        boolean
-  node_count:    number
-  can_edit:      boolean
+function Toolbar({ board, sel_color, on_color, on_add, on_delete_sel, has_selection, saving, node_count, can_edit, on_open_boards }: {
+  board:          PlanBoard
+  sel_color:      NodeColorKey
+  on_color:       (c: NodeColorKey) => void
+  on_add:         () => void
+  on_delete_sel:  () => void
+  has_selection:  boolean
+  saving:         boolean
+  node_count:     number
+  can_edit:       boolean
+  on_open_boards: () => void
 }) {
   return (
-    <div className="flex items-center gap-2.5 border-b border-line bg-card px-4 py-2">
+    <div className="flex items-center gap-2 border-b border-line bg-card px-3 py-2 lg:gap-2.5 lg:px-4">
+      <button type="button" onClick={on_open_boards} title="Boards"
+        className="shrink-0 cursor-pointer rounded-lg border border-line p-1.5 text-muted transition-colors hover:bg-line/40 hover:text-ink lg:hidden">
+        <SidebarIcon />
+      </button>
+
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <p className="truncate text-sm font-semibold text-ink">{board.name}</p>
-        <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+        <span className={`hidden shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold sm:inline-block ${
           board.visibility === "SHARED"
             ? "bg-blue-500/10 text-blue-400"
             : "bg-line/40 text-muted"
@@ -691,7 +710,7 @@ function Toolbar({ board, sel_color, on_color, on_add, on_delete_sel, has_select
           {board.visibility === "SHARED" ? "Shared" : "Private"}
         </span>
         {node_count > 0 && (
-          <span className="shrink-0 rounded-md bg-line/40 px-1.5 py-0.5 text-[10px] text-muted">{node_count}</span>
+          <span className="hidden shrink-0 rounded-md bg-line/40 px-1.5 py-0.5 text-[10px] text-muted sm:inline-block">{node_count}</span>
         )}
       </div>
 
@@ -700,23 +719,23 @@ function Toolbar({ board, sel_color, on_color, on_add, on_delete_sel, has_select
           <ColorPicker value={sel_color} onChange={on_color} label={has_selection ? "Change color" : "New node color"} />
           <div className="h-4 w-px bg-line" />
           <button type="button" onClick={on_add}
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-flag-red hover:text-flag-red">
-            <PlusIcon /> Add node
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-card px-2 py-1.5 text-xs font-medium text-ink transition-colors hover:border-flag-red hover:text-flag-red lg:px-3">
+            <PlusIcon /> <span className="hidden sm:inline">Add node</span>
           </button>
           {has_selection && (
             <button type="button" onClick={on_delete_sel}
-              className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-flag-red transition-colors hover:border-flag-red hover:bg-flag-red/8">
-              <TrashIcon /> Delete
+              className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-line px-2 py-1.5 text-xs font-medium text-flag-red transition-colors hover:border-flag-red hover:bg-flag-red/8 lg:px-3">
+              <TrashIcon /> <span className="hidden sm:inline">Delete</span>
             </button>
           )}
         </>
       ) : (
         <span className="flex items-center gap-1.5 rounded-lg border border-line/50 px-2.5 py-1 text-[10px] font-medium text-muted">
-          <EyeIcon /> Read only
+          <EyeIcon /> <span className="hidden sm:inline">Read only</span>
         </span>
       )}
 
-      {saving && <span className="text-[10px] text-muted">Saving…</span>}
+      {saving && <span className="hidden text-[10px] text-muted sm:block">Saving…</span>}
     </div>
   )
 }
@@ -738,14 +757,16 @@ type CanvasProps = {
   on_add:          () => void
   on_delete_sel:   () => void
   can_edit:        boolean
+  on_open_boards:  () => void
 }
 
 function Canvas({
   active, nodes, edges, on_nodes_change, on_edges_change,
   on_connect, on_selection, sel_color, selected, saving,
-  on_color, on_add, on_delete_sel, can_edit,
+  on_color, on_add, on_delete_sel, can_edit, on_open_boards,
 }: CanvasProps) {
   const has_selection = selected.nodes.length > 0 || selected.edges.length > 0
+  const is_dark = typeof document !== "undefined" && document.documentElement.classList.contains("dark")
 
   return (
     <CanvasCtx.Provider value={can_edit}>
@@ -756,6 +777,7 @@ function Canvas({
           on_add={on_add} on_delete_sel={on_delete_sel}
           has_selection={has_selection} saving={saving}
           node_count={nodes.length} can_edit={can_edit}
+          on_open_boards={on_open_boards}
         />
         <div className="relative flex-1">
           <ReactFlow
@@ -767,16 +789,16 @@ function Canvas({
             multiSelectionKeyCode="Shift"
             nodesDraggable={can_edit}
             nodesConnectable={can_edit}
-            colorMode="dark"
+            colorMode={is_dark ? "dark" : "light"}
             fitView fitViewOptions={{ padding: 0.25 }}
-            style={{ background: "hsl(220 13% 8%)" }}
+            style={{ background: "var(--color-page)" }}
             proOptions={{ hideAttribution: true }}
           >
-            <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="hsl(220 13% 22%)" />
+            <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--color-line)" />
             <Controls showInteractive={false} />
             <MiniMap
               nodeColor={n => NODE_COLOR_MAP[(n.data as PlanNodeData).color ?? "slate"]?.border ?? "#555"}
-              maskColor="hsl(220 13% 5% / 0.65)"
+              maskColor="color-mix(in srgb, var(--color-page) 70%, transparent)"
             />
             <Panel position="bottom-center">
               <AnimatePresence>
@@ -808,15 +830,16 @@ function PlanningInner() {
   const notify     = use_notify()
   const { setNodes: rf_set_nodes } = useReactFlow()
 
-  const [boards,       set_boards]       = useState<PlanBoard[]>([])
-  const [active,       set_active]       = useState<PlanBoard | null>(null)
-  const [editors,      set_editors]      = useState<BoardEditor[]>([])
-  const [can_edit,     set_can_edit]     = useState(true)
-  const [creating,     set_creating]     = useState(false)
-  const [saving,       set_saving]       = useState(false)
-  const [sel_color,    set_sel_color]    = useState<NodeColorKey>("slate")
-  const [selected,     set_selected]     = useState<{ nodes: Node[]; edges: Edge[] }>({ nodes: [], edges: [] })
-  const [editors_board, set_editors_board] = useState<PlanBoard | null>(null)
+  const [boards,            set_boards]            = useState<PlanBoard[]>([])
+  const [active,            set_active]            = useState<PlanBoard | null>(null)
+  const [editors,           set_editors]           = useState<BoardEditor[]>([])
+  const [can_edit,          set_can_edit]          = useState(true)
+  const [creating,          set_creating]          = useState(false)
+  const [saving,            set_saving]            = useState(false)
+  const [sel_color,         set_sel_color]         = useState<NodeColorKey>("slate")
+  const [selected,          set_selected]          = useState<{ nodes: Node[]; edges: Edge[] }>({ nodes: [], edges: [] })
+  const [editors_board,     set_editors_board]     = useState<PlanBoard | null>(null)
+  const [boards_mobile_open, set_boards_mobile_open] = useState(false)
 
   const [nodes, set_nodes, on_nodes_change] = useNodesState<Node>([])
   const [edges, set_edges, on_edges_change] = useEdgesState<Edge>([])
@@ -936,12 +959,14 @@ function PlanningInner() {
     const board = data as PlanBoard
     set_boards(bs => [board, ...bs])
     load_board(board)
+    set_boards_mobile_open(false)
   }
 
   const select_board = (b: PlanBoard) => {
     if (active?.id === b.id) return
     flush_save()
     load_board(b)
+    set_boards_mobile_open(false)
   }
 
   const rename_board = async (id: string, name: string) => {
@@ -975,6 +1000,20 @@ function PlanningInner() {
     <div className="flex h-screen overflow-hidden">
       <SideRail />
 
+      {/* Mobile boards backdrop */}
+      <AnimatePresence>
+        {boards_mobile_open && (
+          <motion.button
+            type="button"
+            aria-label="Close boards"
+            onClick={() => set_boards_mobile_open(false)}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-carbon-black/40 backdrop-blur-sm lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       <BoardSidebar
         boards={boards}
         active_id={active?.id ?? null}
@@ -986,27 +1025,39 @@ function PlanningInner() {
         on_manage_editors={b => set_editors_board(b)}
         on_change_visibility={change_visibility}
         creating={creating}
+        mobile_open={boards_mobile_open}
+        on_mobile_close={() => set_boards_mobile_open(false)}
       />
 
-      {active ? (
-        <Canvas
-          active={active} nodes={nodes} edges={edges}
-          on_nodes_change={handle_nodes_change} on_edges_change={handle_edges_change}
-          on_connect={on_connect} on_selection={on_selection_change}
-          sel_color={sel_color} selected={selected}
-          saving={saving} on_color={apply_color}
-          on_add={add_node} on_delete_sel={delete_selected}
-          can_edit={can_edit}
-        />
-      ) : (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4">
-          <NetworkIcon size={48} className="text-muted" />
-          <div className="text-center">
-            <p className="text-sm font-semibold text-ink">No boards yet</p>
-            <p className="mt-1 text-xs text-muted">Create a board to start planning</p>
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden pt-14 lg:pt-0">
+        {active ? (
+          <Canvas
+            active={active} nodes={nodes} edges={edges}
+            on_nodes_change={handle_nodes_change} on_edges_change={handle_edges_change}
+            on_connect={on_connect} on_selection={on_selection_change}
+            sel_color={sel_color} selected={selected}
+            saving={saving} on_color={apply_color}
+            on_add={add_node} on_delete_sel={delete_selected}
+            can_edit={can_edit}
+            on_open_boards={() => set_boards_mobile_open(true)}
+          />
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={() => set_boards_mobile_open(true)}
+              className="flex cursor-pointer items-center gap-2 rounded-lg border border-line px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-line/40 hover:text-ink lg:hidden"
+            >
+              <SidebarIcon /> View boards
+            </button>
+            <NetworkIcon size={48} className="text-muted" />
+            <div className="text-center">
+              <p className="text-sm font-semibold text-ink">No boards yet</p>
+              <p className="mt-1 text-xs text-muted">Create a board to start planning</p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <AnimatePresence>
         {editors_board && (
@@ -1033,7 +1084,8 @@ export default function PlanningPage() {
 
 const sv = { width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const }
 
-const PlusIcon  = () => <svg {...sv}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+const PlusIcon    = () => <svg {...sv}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+const SidebarIcon = () => <svg {...sv}><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
 const TrashIcon = () => <svg {...sv}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
 const XIcon     = () => <svg {...sv}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 const UsersIcon = () => <svg {...sv}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
