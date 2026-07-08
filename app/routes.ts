@@ -18,5 +18,7 @@ export default [
     route("inspector", "features/inspector/routes/inspector.tsx"),
     route("locations", "features/locations/routes/locations.tsx"),
     route("planning",  "features/planning/routes/planning.tsx"),
+    route("crypto",    "features/crypto/routes/crypto.tsx"),
+    route("crypto/:id","features/crypto/routes/coin.tsx"),
   ]),
 ] satisfies RouteConfig;

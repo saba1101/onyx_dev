@@ -168,7 +168,8 @@ export const LinkedinIcon = make_solid(
   "M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z",
 )
 
-export const StarIcon = make_stroke(<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />)
+export const StarIcon       = make_stroke(<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />)
+export const StarFilledIcon = make_solid("M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z")
 
 export const GitForkIcon = make_stroke(
   <>
@@ -319,3 +320,28 @@ export const DatabaseIcon = make_stroke(
     <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3" />
   </>,
 )
+
+export const TrendingUpIcon = make_stroke(
+  <>
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+    <polyline points="17 6 23 6 23 12" />
+  </>,
+)
+
+export const RefreshIcon = make_stroke(
+  <>
+    <polyline points="23 4 23 10 17 10" />
+    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+  </>,
+)
+
+export const WalletIcon = make_stroke(
+  <>
+    <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
+    <path d="M16 3H8L4 7h16l-4-4z" />
+    <circle cx="16.5" cy="14" r="1.5" />
+  </>,
+)
+
+export const ArrowUpIcon    = make_stroke(<polyline points="12 19 12 5 5 12 19 12" />)
+export const ArrowDownIcon  = make_stroke(<polyline points="12 5 12 19 19 12 5 12" />)

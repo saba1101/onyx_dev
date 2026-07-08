@@ -108,6 +108,7 @@ const PAGE_PATH_TO_KEY: Record<string, string> = {
   "/inspector": "scanner",
   "/locations": "locations",
   "/planning":  "planning",
+  "/crypto":    "crypto",
   "/settings":  "settings",
 };
 
@@ -144,6 +145,7 @@ export const SideRail = () => {
     { to: "/inspector", label: "Scanner",                icon: SearchIcon   },
     { to: "/locations", label: "Locations",              icon: MapPinIcon   },
     { to: "/planning",  label: "Flow Map",               icon: NetworkIcon  },
+    { to: "/crypto",    label: "Crypto",                 icon: CryptoIcon   },
     { to: "/settings",  label: "Settings",               icon: GearIcon     },
   ];
 
@@ -365,5 +367,12 @@ const NetworkIcon = () => (
     <line x1="12" y1="7"  x2="5"  y2="17" />
     <line x1="12" y1="7"  x2="19" y2="17" />
     <line x1="5"  y1="19" x2="19" y2="19" />
+  </svg>
+);
+
+const CryptoIcon = () => (
+  <svg {...icon_props}>
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+    <polyline points="17 6 23 6 23 12" />
   </svg>
 );

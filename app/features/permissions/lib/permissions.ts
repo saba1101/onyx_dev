@@ -6,7 +6,7 @@ export type Permission =
   | "delete_any_comment"
   | "manage_columns"
 
-export type PageKey = "dashboard" | "workspace" | "git" | "users" | "settings" | "system" | "scanner" | "locations" | "planning"
+export type PageKey = "dashboard" | "workspace" | "git" | "users" | "settings" | "system" | "scanner" | "locations" | "planning" | "crypto"
 
 export type MemberPermissions = {
   user_id:            string
@@ -32,7 +32,7 @@ export const PERMISSION_META: Record<Permission, { label: string; desc: string }
   manage_columns:     { label: "Manage columns",    desc: "Add, rename and delete board columns" },
 }
 
-export const PAGES: PageKey[] = ["dashboard", "workspace", "git", "users", "settings", "scanner", "locations", "planning", "system"]
+export const PAGES: PageKey[] = ["dashboard", "workspace", "git", "users", "settings", "scanner", "locations", "planning", "crypto", "system"]
 
 export const PRIVILEGED_PAGES = new Set<PageKey>(["system"])
 
@@ -46,6 +46,7 @@ export const PAGE_META: Record<PageKey, { label: string; desc: string }> = {
   locations: { label: "Locations", desc: "Live location sharing between team members" },
   system:    { label: "System",    desc: "Server stats, database and storage" },
   planning:  { label: "Planning",  desc: "Visual flow boards for planning and mapping ideas" },
+  crypto:    { label: "Crypto",    desc: "Live market data, portfolio tracker, and price charts" },
 }
 
 export const default_permissions = (): Omit<MemberPermissions, "user_id" | "updated_at"> => ({
