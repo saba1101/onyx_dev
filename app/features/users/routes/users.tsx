@@ -3,6 +3,7 @@ import { Navigate } from "react-router"
 import { motion } from "motion/react"
 import { useAuth } from "~/features/auth/lib/auth"
 import { useProfile } from "~/features/profile/lib/profile-context"
+import { use_presence_tick } from "~/hooks/use-presence-tick"
 import { AccessTab } from "~/features/permissions/routes/permissions"
 import { effective_status, status_options, status_tone } from "~/features/profile/lib/profile"
 import { SideRail } from "~/components/ui/side-rail"
@@ -606,6 +607,7 @@ const TeamView = () => {
   const [status_f, set_status_f] = useState("all")
   const [selected, set_selected] = useState<PublicProfile | null>(null)
   const notify = use_notify()
+  use_presence_tick()
 
   useEffect(() => {
     list_public_profiles().then(({ profiles: data, error }) => {
@@ -719,6 +721,7 @@ const Users = () => {
   const [active_tab, set_active_tab]          = useState<"members" | "access">("members")
 
   const notify   = use_notify()
+  use_presence_tick()
   // Keep a stable ref so the Realtime callback always sees the latest state
   const users_ref = useRef<UserAdmin[]>([])
   users_ref.current = users

@@ -12,6 +12,7 @@ import { useProfile } from "~/features/profile/lib/profile-context"
 import { SideRail } from "~/components/ui/side-rail"
 import { AvatarUploader } from "~/features/profile/components/avatar-uploader"
 import { use_notify } from "~/hooks/use-notify"
+import { use_presence_tick } from "~/hooks/use-presence-tick"
 import { supabase } from "~/lib/supabase"
 import { effective_status, status_tone, type Profile } from "~/features/profile/lib/profile"
 import {
@@ -135,6 +136,8 @@ const CT = ({ active, payload, label }: {
 // ─── Root-only charts ─────────────────────────────────────────────────────────
 
 const StatusChart = ({ members }: { members: MemberRow[] }) => {
+  const tick = use_presence_tick()
+
   const data = useMemo(() => {
     const counts: Record<string, number> = { active: 0, away: 0, busy: 0, offline: 0 }
     for (const m of members) {
@@ -143,11 +146,11 @@ const StatusChart = ({ members }: { members: MemberRow[] }) => {
     }
     return Object.entries(counts)
       .map(([status, count]) => ({ status, count, color: STATUS_HEX[status] ?? "#6b7280" }))
-  }, [members])
+  }, [members, tick])
 
   const active_members = useMemo(
     () => members.filter(m => effective_status(m.status as "active" | "away" | "busy" | "offline", m.last_seen_at) === "active").slice(0, 5),
-    [members],
+    [members, tick],
   )
 
   return (
@@ -304,6 +307,7 @@ const GrowthChart = ({ members }: { members: MemberRow[] }) => {
 }
 
 const RecentSignups = ({ members }: { members: MemberRow[] }) => {
+  const tick = use_presence_tick()
   const recent = useMemo(
     () =>
       [...members]

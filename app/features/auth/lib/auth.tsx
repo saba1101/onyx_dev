@@ -45,20 +45,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // ── Presence heartbeat ────────────────────────────────────────────────────
     //
     // Rules:
-    //   • Only fire while the tab is visible AND the user has interacted in the
-    //     last IDLE_MS (5 min). A tab left open but untouched goes offline.
-    //   • Heartbeat fires at most every 60 s — cheap, not spammy.
-    //   • When the user returns after being idle we fire immediately so they
-    //     appear online within seconds rather than waiting for the next tick.
-    //   • Activity events are throttled to once per 30 s so mousemove etc.
-    //     don't generate redundant work.
+    //   • Ping once a minute while the tab is open and visible. Being "online"
+    //     just means the tab is here — no activity/idle tracking, since that
+    //     flipped genuinely-open tabs to offline just for sitting still.
+    //   • Fire an extra ping immediately when the tab regains visibility, so
+    //     switching back doesn't wait up to a full minute to look online.
+    //   • On tab close, best-effort mark offline right away instead of
+    //     relying solely on the 3-minute staleness fallback in effective_status.
 
-    const IDLE_MS        = 5 * 60_000   // 5 min idle → stop heartbeat
-    const BEAT_MS        = 60_000       // heartbeat interval
-    const ACTIVITY_MS    = 30_000       // min gap between activity recordings
-
-    let last_activity    = Date.now()   // assume active on load
-    let last_activity_ts = Date.now()   // throttle gate
+    const PING_MS = 60_000
 
     const push_presence = () => {
       const sess = session_ref.current
@@ -67,45 +62,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from("profiles")
         .update({ last_seen_at: new Date().toISOString() })
         .eq("id", sess.user.id)
-        .then(() => {})
+        .then(({ error }) => {
+          if (error) console.error("presence ping failed:", error.message)
+        })
     }
 
-    const beat = () => {
-      const idle = Date.now() - last_activity > IDLE_MS
-      if (document.visibilityState !== "visible" || idle) return
-      push_presence()
-    }
-
-    const on_activity = () => {
-      const now = Date.now()
-      if (now - last_activity_ts < ACTIVITY_MS) return   // throttle
-      last_activity_ts = now
-
-      const was_idle = now - last_activity > IDLE_MS
-      last_activity  = now
-
-      // Snap back online immediately after returning from idle
-      if (was_idle && document.visibilityState === "visible") push_presence()
+    const tick = () => {
+      if (document.visibilityState === "visible") push_presence()
     }
 
     const on_visibility = () => {
-      if (document.visibilityState === "visible") {
-        last_activity = Date.now()   // treat tab-focus as activity
-        push_presence()
-      }
+      if (document.visibilityState === "visible") push_presence()
     }
 
-    const interval = setInterval(beat, BEAT_MS)
+    const on_unload = () => {
+      const sess = session_ref.current
+      if (!sess?.access_token) return
+      const url = import.meta.env.VITE_SUPABASE_URL
+      const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+      fetch(`${url}/rest/v1/rpc/set_self_offline`, {
+        method: "POST",
+        keepalive: true,
+        headers: {
+          "Content-Type": "application/json",
+          apikey: key,
+          Authorization: `Bearer ${sess.access_token}`,
+        },
+      }).catch(() => {})
+    }
 
-    const activity_events = ["mousemove", "keydown", "pointerdown", "scroll", "touchstart"] as const
-    activity_events.forEach(e => document.addEventListener(e, on_activity, { passive: true }))
+    const interval = setInterval(tick, PING_MS)
     document.addEventListener("visibilitychange", on_visibility)
+    window.addEventListener("pagehide", on_unload)
 
     return () => {
       subscription.unsubscribe()
       clearInterval(interval)
-      activity_events.forEach(e => document.removeEventListener(e, on_activity))
       document.removeEventListener("visibilitychange", on_visibility)
+      window.removeEventListener("pagehide", on_unload)
     }
   }, [])
 
