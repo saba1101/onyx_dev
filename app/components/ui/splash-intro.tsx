@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
+import { Loader } from "~/components/ui/loader"
 
 // useLayoutEffect on server causes a warning; this silences it while keeping
 // the synchronous-before-paint behaviour on the client.
@@ -47,7 +48,7 @@ const SplashContent = () => {
     <AnimatePresence>
       {show && (
         <motion.div
-          className="fixed inset-0 z-[100] grid place-items-center bg-carbon-black"
+          className="fixed inset-0 z-[100] grid place-items-center gap-8 bg-carbon-black"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4, ease: "easeInOut" }}
@@ -57,6 +58,7 @@ const SplashContent = () => {
             {tail && <span className="whitespace-pre text-flag-red">{tail}</span>}
             <Caret />
           </span>
+          <Loader />
         </motion.div>
       )}
     </AnimatePresence>

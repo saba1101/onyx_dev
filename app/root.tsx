@@ -9,6 +9,7 @@ import {
 
 import type { Route } from "./+types/root"
 import { SplashIntro } from "~/components/ui/splash-intro"
+import { Loader } from "~/components/ui/loader"
 import { NotificationProvider } from "~/components/ui/notifications"
 import { Backdrop } from "~/components/ui/backdrop"
 import { ThemeToggle } from "~/components/ui/theme-toggle"
@@ -80,6 +81,14 @@ const App = () => (
   </AuthProvider>
 )
 export default App
+
+// Rendered in the static SPA-mode HTML before JS has loaded/hydrated —
+// replaces the otherwise blank background with a visible loading state.
+export const HydrateFallback = () => (
+  <div className="fixed inset-0 z-[90] grid place-items-center">
+    <Loader size={28} />
+  </div>
+)
 
 export const ErrorBoundary = ({ error }: Route.ErrorBoundaryProps) => {
   let title = "Error"
