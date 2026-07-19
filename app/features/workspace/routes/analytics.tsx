@@ -106,7 +106,7 @@ const Panel = ({ title, children, className = "" }: { title: string; children: R
 
 // ── Tab component ─────────────────────────────────────────────────────────────
 
-export function AnalyticsTab() {
+export function AnalyticsTab({ project_id }: { project_id: string }) {
   const [tasks,    set_tasks]    = useState<WTask[]>([])
   const [statuses, set_statuses] = useState<WStatus[]>([])
   const [profiles, set_profiles] = useState<WProfile[]>([])
@@ -114,8 +114,8 @@ export function AnalyticsTab() {
 
   useEffect(() => {
     Promise.all([
-      api.tasks.list(),
-      api.statuses.list(),
+      api.tasks.list(project_id),
+      api.statuses.list(project_id),
       api.profiles.list(),
     ]).then(([t, s, p]) => {
       set_tasks((t.data ?? []) as WTask[])
@@ -123,7 +123,7 @@ export function AnalyticsTab() {
       set_profiles((p.data ?? []) as WProfile[])
       set_fetching(false)
     })
-  }, [])
+  }, [project_id])
 
   if (fetching) return (
     <div className="flex flex-1 items-center justify-center">

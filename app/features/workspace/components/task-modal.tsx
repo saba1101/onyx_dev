@@ -222,6 +222,7 @@ type Props = {
   open:           boolean
   task:           WTask | null
   default_status: string | null
+  project_id:     string
   statuses:       WStatus[]
   profiles:       Map<string, WProfile>
   user_id:        string
@@ -234,7 +235,7 @@ type Props = {
 }
 
 export const TaskModal = ({
-  open, task, default_status, statuses, profiles,
+  open, task, default_status, project_id, statuses, profiles,
   user_id, is_root, permissions,
   on_close, on_created, on_updated, on_deleted,
 }: Props) => {
@@ -293,7 +294,7 @@ export const TaskModal = ({
     set_saving(true)
     if (is_create) {
       const { data, error } = await api.tasks.create({
-        title: title.trim(), description: desc.trim() || null,
+        project_id, title: title.trim(), description: desc.trim() || null,
         type, status_id, created_by: user_id, assigned_to,
       })
       if (error) notify({ tone: "error", title: "Failed to create", message: error.message })
@@ -568,13 +569,14 @@ type StatusModalProps = {
   open:       boolean
   editing:    WStatus | null
   next_pos:   number
+  project_id: string
   on_close:   () => void
   on_saved:   (s: WStatus) => void
   on_deleted: (id: string) => void
 }
 
 export const StatusModal = ({
-  open, editing, next_pos, on_close, on_saved, on_deleted,
+  open, editing, next_pos, project_id, on_close, on_saved, on_deleted,
 }: StatusModalProps) => {
   const notify    = use_notify()
   const is_new    = editing === null
@@ -594,7 +596,7 @@ export const StatusModal = ({
     if (!name.trim() || saving) return
     set_saving(true)
     if (is_new) {
-      const { data, error } = await api.statuses.create(name.trim(), color, next_pos)
+      const { data, error } = await api.statuses.create(project_id, name.trim(), color, next_pos)
       if (error) notify({ tone: "error", title: "Failed", message: error.message })
       else { on_saved(data as WStatus); on_close() }
     } else {

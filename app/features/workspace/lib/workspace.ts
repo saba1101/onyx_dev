@@ -1,13 +1,26 @@
 import { supabase } from "~/lib/supabase"
 
-export type TaskType    = "feature" | "bug"
-export type StatusColor = "gray" | "blue" | "yellow" | "green" | "red" | "purple" | "orange"
+export type TaskType         = "feature" | "bug"
+export type StatusColor      = "gray" | "blue" | "yellow" | "green" | "red" | "purple" | "orange"
+export type ProjectVisibility = "private" | "public"
+
+export type WProject = {
+  id:          string
+  name:        string
+  description: string | null
+  color:       StatusColor
+  visibility:  ProjectVisibility
+  owner_id:    string | null
+  created_at:  string
+  updated_at:  string
+}
 
 export type WStatus = {
   id:         string
   name:       string
   color:      StatusColor
   position:   number
+  project_id: string
   created_at: string
 }
 
@@ -17,6 +30,7 @@ export type WTask = {
   description: string | null
   type:        TaskType
   status_id:   string | null
+  project_id:  string
   created_by:  string | null
   assigned_to: string | null
   position:    number
@@ -72,11 +86,26 @@ export const fmt_rel = (iso: string): string => {
 // ── API ───────────────────────────────────────────────────────────────────────
 
 export const api = {
-  statuses: {
+  projects: {
     list: () =>
-      supabase.from("workspace_statuses").select("*").order("position"),
-    create: (name: string, color: StatusColor, position: number) =>
-      supabase.from("workspace_statuses").insert({ name, color, position }).select().single(),
+      supabase.from("workspace_projects").select("*").order("updated_at", { ascending: false }),
+    get: (id: string) =>
+      supabase.from("workspace_projects").select("*").eq("id", id).single(),
+    create: (d: { name: string; description: string | null; color: StatusColor; visibility: ProjectVisibility; owner_id: string }) =>
+      supabase.from("workspace_projects").insert(d).select().single(),
+    update: (id: string, patch: Partial<Pick<WProject, "name" | "description" | "color" | "visibility">>) =>
+      supabase.from("workspace_projects")
+        .update({ ...patch, updated_at: new Date().toISOString() })
+        .eq("id", id).select().single(),
+    remove: (id: string) =>
+      supabase.from("workspace_projects").delete().eq("id", id),
+  },
+
+  statuses: {
+    list: (project_id: string) =>
+      supabase.from("workspace_statuses").select("*").eq("project_id", project_id).order("position"),
+    create: (project_id: string, name: string, color: StatusColor, position: number) =>
+      supabase.from("workspace_statuses").insert({ project_id, name, color, position }).select().single(),
     update: (id: string, patch: { name?: string; color?: StatusColor }) =>
       supabase.from("workspace_statuses").update(patch).eq("id", id),
     remove: (id: string) =>
@@ -84,9 +113,11 @@ export const api = {
   },
 
   tasks: {
-    list: () =>
-      supabase.from("workspace_tasks").select("*").order("created_at"),
-    create: (d: { title: string; description: string | null; type: TaskType; status_id: string | null; created_by: string; assigned_to: string | null }) =>
+    list: (project_id: string) =>
+      supabase.from("workspace_tasks").select("*").eq("project_id", project_id).order("created_at"),
+    count_by_project: () =>
+      supabase.from("workspace_tasks").select("project_id"),
+    create: (d: { project_id: string; title: string; description: string | null; type: TaskType; status_id: string | null; created_by: string; assigned_to: string | null }) =>
       supabase.from("workspace_tasks").insert(d).select().single(),
     update: (id: string, patch: Partial<Pick<WTask, "title" | "description" | "type" | "status_id" | "assigned_to">>) =>
       supabase.from("workspace_tasks")
