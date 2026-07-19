@@ -16,6 +16,7 @@ import { ThemeToggle } from "~/components/ui/theme-toggle"
 import { AuthProvider } from "~/features/auth/lib/auth"
 import { ProfileProvider } from "~/features/profile/lib/profile-context"
 import { PermissionsProvider } from "~/features/permissions/lib/permissions-context"
+import { LocationSharingSync } from "~/features/locations/lib/location-sharing-sync"
 import "./app.css"
 
 export const links: Route.LinksFunction = () => [
@@ -75,6 +76,7 @@ const App = () => (
   <AuthProvider>
     <ProfileProvider>
       <PermissionsProvider>
+        <LocationSharingSync />
         <Outlet />
       </PermissionsProvider>
     </ProfileProvider>
