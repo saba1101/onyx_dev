@@ -328,6 +328,13 @@ export const TrendingUpIcon = make_stroke(
   </>,
 )
 
+export const TrendingDownIcon = make_stroke(
+  <>
+    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+    <polyline points="17 18 23 18 23 12" />
+  </>,
+)
+
 export const RefreshIcon = make_stroke(
   <>
     <polyline points="23 4 23 10 17 10" />
