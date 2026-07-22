@@ -182,7 +182,7 @@ const Column = ({
       onDragLeave={on_col_drag_leave}
       onDragOver={e => e.preventDefault()}
       onDrop={on_col_drop}
-      className={`flex w-full flex-col rounded-2xl border transition-colors duration-150
+      className={`flex h-full min-h-[70vh] w-full flex-col rounded-2xl border transition-colors duration-150
         ${col_drag_over && dragging
           ? "border-flag-red/30 bg-flag-red/3"
           : "border-line/50 bg-card/30"
@@ -384,22 +384,24 @@ const ColumnsPanel = ({
 // ── Empty state ───────────────────────────────────────────────────────────────
 
 const EmptyBoard = ({ on_manage }: { on_manage: () => void }) => (
-  <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-line/40">
-      <KanbanIcon />
+  <div className="grid flex-1 min-h-0 place-items-center px-4">
+    <div className="flex flex-col items-center gap-4 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-line/40">
+        <KanbanIcon />
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-ink">No columns yet</p>
+        <p className="mt-1 text-xs text-muted">Add columns to start organising tasks</p>
+      </div>
+      <button
+        type="button"
+        onClick={on_manage}
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-flag-red px-3.5 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-80"
+      >
+        <PlusIcon size={12} />
+        Add column
+      </button>
     </div>
-    <div>
-      <p className="text-sm font-semibold text-ink">No columns yet</p>
-      <p className="mt-1 text-xs text-muted">Add columns to start organising tasks</p>
-    </div>
-    <button
-      type="button"
-      onClick={on_manage}
-      className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-flag-red px-3.5 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-80"
-    >
-      <PlusIcon size={12} />
-      Add column
-    </button>
   </div>
 )
 
@@ -680,7 +682,9 @@ export default function BoardPage() {
                 <button
                   type="button"
                   onClick={() => open_create()}
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-flag-red px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-80"
+                  disabled={statuses.length === 0}
+                  title={statuses.length === 0 ? "Add a column before creating tasks" : undefined}
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-flag-red px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:opacity-40"
                 >
                   <PlusIcon size={12} />
                   New task
@@ -735,7 +739,7 @@ export default function BoardPage() {
             {statuses.map((status, i) => (
               <motion.div
                 key={status.id}
-                className="flex flex-1 min-w-[260px] lg:min-w-[280px]"
+                className="flex flex-1 min-w-[260px] max-w-[360px] lg:min-w-[280px]"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.22, ease: ease_out, delay: i * 0.05 }}
@@ -760,12 +764,12 @@ export default function BoardPage() {
 
             {uncategorised.length > 0 && (
               <motion.div
-                className="flex flex-1 min-w-[260px] lg:min-w-[280px]"
+                className="flex flex-1 min-w-[260px] max-w-[360px] lg:min-w-[280px]"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.22, ease: ease_out, delay: statuses.length * 0.05 }}
               >
-                <div className="flex w-full flex-col rounded-2xl border border-dashed border-line/50 bg-card/20">
+                <div className="flex h-full min-h-[70vh] w-full flex-col rounded-2xl border border-dashed border-line/50 bg-card/20">
                   <div className="flex items-center gap-2 px-3.5 pt-3.5 pb-2.5">
                     <span className="h-2 w-2 shrink-0 rounded-full bg-muted/40" />
                     <span className="flex-1 text-xs font-semibold text-muted">Uncategorised</span>
