@@ -8,6 +8,7 @@ import { SearchInput } from "~/components/ui/search-input"
 import { Dropdown } from "~/components/ui/dropdown"
 import { Modal } from "~/components/ui/modal"
 import { Table, type TableColumn } from "~/components/ui/table"
+import { ConfirmPopover } from "~/components/ui/confirm-popover"
 import { supabase } from "~/lib/supabase"
 import { ServiceModal } from "~/features/subscriptions/components/service-modal"
 import { EntryModal } from "~/features/subscriptions/components/entry-modal"
@@ -74,6 +75,8 @@ const Sparkline = ({ service_id, entries }: { service_id: string; entries: Entry
 const build_service_columns = (
   entries: Entry[],
   on_edit: (s: Service) => void,
+  deleting_id: string | null,
+  on_confirm_delete: (id: string) => void,
 ): TableColumn<Service>[] => [
   {
     key: "service",
@@ -136,16 +139,33 @@ const build_service_columns = (
     key: "actions",
     header: "",
     align: "right",
-    className: "w-10",
+    className: "w-16",
     cell: s => (
-      <button
-        type="button"
-        onClick={e => { e.stopPropagation(); on_edit(s) }}
-        title="Edit service"
-        className="grid h-7 w-7 cursor-pointer place-items-center rounded-lg text-muted opacity-0 transition-opacity hover:bg-line/50 hover:text-ink group-hover:opacity-100"
-      >
-        <PencilIcon size={12} />
-      </button>
+      <div className="flex items-center justify-end gap-0.5 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={e => { e.stopPropagation(); on_edit(s) }}
+          title="Edit service"
+          className="grid h-7 w-7 cursor-pointer place-items-center rounded-lg text-muted transition-colors hover:bg-line/50 hover:text-ink"
+        >
+          <PencilIcon size={12} />
+        </button>
+        <ConfirmPopover
+          message={`Delete "${s.name}"? This removes the service and its whole ledger.`}
+          busy={deleting_id === s.id}
+          on_confirm={() => on_confirm_delete(s.id)}
+          trigger={({ onClick }) => (
+            <button
+              type="button"
+              onClick={onClick}
+              title="Delete service"
+              className="grid h-7 w-7 cursor-pointer place-items-center rounded-lg text-muted transition-colors hover:bg-flag-red/10 hover:text-flag-red"
+            >
+              <TrashIcon size={12} />
+            </button>
+          )}
+        />
+      </div>
     ),
   },
 ]
@@ -321,6 +341,7 @@ export default function SubscriptionsPage() {
   const [category_f, set_category_f] = useState("all")
   const [status_f,   set_status_f]   = useState("all")
   const [selected_id, set_selected_id] = useState<string | null>(null)
+  const [deleting_id, set_deleting_id] = useState<string | null>(null)
 
   const [service_modal_open, set_service_modal_open] = useState(false)
   const [editing_service,    set_editing_service]    = useState<Service | null>(null)
@@ -391,6 +412,14 @@ export default function SubscriptionsPage() {
     set_services(prev => prev.filter(s => s.id !== id))
     set_entries(prev => prev.filter(e => e.service_id !== id))
     set_selected_id(prev => prev === id ? null : prev)
+  }
+
+  const delete_service_row = async (id: string) => {
+    set_deleting_id(id)
+    const { error } = await api.services.remove(id)
+    if (error) notify({ tone: "error", title: "Failed to delete", message: error.message })
+    else on_service_deleted(id)
+    set_deleting_id(null)
   }
 
   const open_log = (service_id: string, kind: EntryKind) => {
@@ -523,7 +552,7 @@ export default function SubscriptionsPage() {
             </div>
           ) : (
             <Table
-              columns={build_service_columns(entries, open_edit_service)}
+              columns={build_service_columns(entries, open_edit_service, deleting_id, delete_service_row)}
               rows={filtered}
               row_key={s => s.id}
               on_row_click={s => set_selected_id(s.id)}
@@ -588,7 +617,7 @@ const StatTile = ({
         <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${icon_cls}`}>{icon}</span>
       </div>
       <div>
-        <p className={`font-bold leading-none tabular-nums ${hero ? "text-3xl" : "text-xl"} ${value_cls}`}>{value}</p>
+        <p className={`text-xl font-bold leading-none tabular-nums ${value_cls}`}>{value}</p>
         {sub && <p className="mt-1.5 text-[10px] text-muted">{sub}</p>}
       </div>
     </div>
