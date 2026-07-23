@@ -205,7 +205,7 @@ export const ChatWidget = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.97 }}
             transition={{ duration: 0.2, ease: ease_out }}
-            className="fixed bottom-20 left-4 right-4 z-40 flex cursor-pointer items-start gap-2.5 rounded-2xl border border-line bg-card p-3 text-left shadow-xl shadow-carbon-black/20 sm:left-auto sm:right-20 sm:w-64"
+            className="fixed bottom-20 left-4 right-4 z-[60] flex cursor-pointer items-start gap-2.5 rounded-2xl border border-line bg-card p-3 text-left shadow-xl shadow-carbon-black/20 sm:left-auto sm:right-20 sm:w-64"
           >
             <ChatAvatar url={toast.avatar_url} name={toast.name} size="sm" />
             <div className="min-w-0">
@@ -224,7 +224,7 @@ export const ChatWidget = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             onClick={() => set_expanded(false)}
-            className="fixed inset-0 z-40 hidden bg-carbon-black/60 backdrop-blur-sm sm:block"
+            className="fixed inset-0 z-[60] hidden bg-carbon-black/60 backdrop-blur-sm sm:block"
           />
         )}
       </AnimatePresence>
@@ -238,7 +238,7 @@ export const ChatWidget = () => {
             exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.18, ease: ease_out }}
             onClick={e => e.stopPropagation()}
-            className={`fixed z-40 flex flex-col overflow-hidden border border-line bg-card shadow-xl shadow-carbon-black/20 ${
+            className={`fixed z-[60] flex flex-col overflow-hidden border border-line bg-card shadow-xl shadow-carbon-black/20 ${
               expanded
                 ? "inset-0 rounded-none sm:inset-0 sm:m-auto sm:h-[min(680px,85vh)] sm:w-[min(640px,92vw)] sm:rounded-2xl"
                 : "inset-0 rounded-none sm:inset-auto sm:bottom-20 sm:right-20 sm:h-[440px] sm:w-[310px] sm:rounded-2xl"
@@ -316,7 +316,7 @@ export const ChatWidget = () => {
         type="button"
         onClick={toggle_open}
         aria-label={open ? "Close messages" : "Open messages"}
-        className={`fixed bottom-4 right-20 z-40 h-12 w-12 cursor-pointer place-items-center rounded-full bg-flag-red text-white shadow-lg shadow-flag-red/30 transition hover:scale-105 active:scale-95 ${
+        className={`fixed bottom-4 right-20 z-[60] h-12 w-12 cursor-pointer place-items-center rounded-full bg-flag-red text-white shadow-lg shadow-flag-red/30 transition hover:scale-105 active:scale-95 ${
           !open ? "grid" : expanded ? "hidden" : "hidden sm:grid"
         }`}
       >
