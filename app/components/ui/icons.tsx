@@ -352,3 +352,12 @@ export const WalletIcon = make_stroke(
 
 export const ArrowUpIcon    = make_stroke(<polyline points="12 19 12 5 5 12 19 12" />)
 export const ArrowDownIcon  = make_stroke(<polyline points="12 5 12 19 19 12 5 12" />)
+
+export const ChevronLeftIcon = make_stroke(<path d="m15 18-6-6 6-6" />)
+
+export const SendIcon = make_stroke(
+  <>
+    <line x1="22" y1="2" x2="11" y2="13" />
+    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+  </>,
+)

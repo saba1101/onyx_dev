@@ -17,6 +17,7 @@ import { AuthProvider } from "~/features/auth/lib/auth"
 import { ProfileProvider } from "~/features/profile/lib/profile-context"
 import { PermissionsProvider } from "~/features/permissions/lib/permissions-context"
 import { LocationSharingSync } from "~/features/locations/lib/location-sharing-sync"
+import { ChatWidget } from "~/features/chat/components/chat-widget"
 import "./app.css"
 
 export const links: Route.LinksFunction = () => [
@@ -77,6 +78,7 @@ const App = () => (
     <ProfileProvider>
       <PermissionsProvider>
         <LocationSharingSync />
+        <ChatWidget />
         <Outlet />
       </PermissionsProvider>
     </ProfileProvider>
