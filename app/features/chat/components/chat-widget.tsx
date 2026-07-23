@@ -4,12 +4,13 @@ import { useAuth } from "~/features/auth/lib/auth"
 import { use_presence_tick } from "~/hooks/use-presence-tick"
 import { use_notify } from "~/hooks/use-notify"
 import { supabase } from "~/lib/supabase"
+import { effective_status, status_tone } from "~/features/profile/lib/profile"
 import { list_public_profiles, type PublicProfile } from "~/features/users/lib/users"
 import { api, subscribe_incoming, type Conversation, type Message } from "~/features/chat/lib/chat"
 import { ConversationList, type ListItem } from "~/features/chat/components/conversation-list"
 import { MessageThread } from "~/features/chat/components/message-thread"
 import { ChatAvatar } from "~/features/chat/components/chat-avatar"
-import { MessageSquareIcon, XIcon } from "~/components/ui/icons"
+import { MessageSquareIcon, ChevronLeftIcon, ExpandIcon, ShrinkIcon, XIcon } from "~/components/ui/icons"
 
 const ease_out = [0.22, 1, 0.36, 1] as const
 
@@ -25,6 +26,7 @@ export const ChatWidget = () => {
   use_presence_tick(30_000)
 
   const [open, set_open]                 = useState(false)
+  const [expanded, set_expanded]         = useState(false)
   const [directory, set_directory]       = useState<PublicProfile[]>([])
   const [conversations, set_conversations] = useState<Conversation[]>([])
   const [loaded, set_loaded]             = useState(false)
@@ -121,7 +123,10 @@ export const ChatWidget = () => {
 
   const back_to_list = () => { set_active_id(null); set_messages([]) }
 
-  const toggle_open = () => set_open(o => !o)
+  // Expanded state never survives a close — reopening the widget always
+  // starts back at the normal floating size.
+  const close_widget = () => { set_open(false); set_expanded(false) }
+  const toggle_open = () => (open ? close_widget() : set_open(true))
 
   const handle_send = async (body: string) => {
     if (!me || !active_id) return
@@ -200,7 +205,7 @@ export const ChatWidget = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.97 }}
             transition={{ duration: 0.2, ease: ease_out }}
-            className="surface fixed bottom-20 right-20 z-40 flex w-64 items-start gap-2.5 rounded-2xl p-3 text-left"
+            className="fixed bottom-20 left-4 right-4 z-40 flex cursor-pointer items-start gap-2.5 rounded-2xl border border-line bg-card p-3 text-left shadow-xl shadow-carbon-black/20 sm:left-auto sm:right-20 sm:w-64"
           >
             <ChatAvatar url={toast.avatar_url} name={toast.name} size="sm" />
             <div className="min-w-0">
@@ -212,36 +217,86 @@ export const ChatWidget = () => {
       </AnimatePresence>
 
       <AnimatePresence>
+        {open && expanded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={() => set_expanded(false)}
+            className="fixed inset-0 z-40 hidden bg-carbon-black/60 backdrop-blur-sm sm:block"
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.96 }}
+            layout
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.18, ease: ease_out }}
-            className="surface fixed bottom-20 right-20 z-40 flex h-[440px] w-[310px] flex-col overflow-hidden rounded-2xl"
+            onClick={e => e.stopPropagation()}
+            className={`fixed z-40 flex flex-col overflow-hidden border border-line bg-card shadow-xl shadow-carbon-black/20 ${
+              expanded
+                ? "inset-0 rounded-none sm:inset-0 sm:m-auto sm:h-[min(680px,85vh)] sm:w-[min(640px,92vw)] sm:rounded-2xl"
+                : "inset-0 rounded-none sm:inset-auto sm:bottom-20 sm:right-20 sm:h-[440px] sm:w-[310px] sm:rounded-2xl"
+            }`}
           >
-            {!active_id && (
-              <div className="flex shrink-0 items-center justify-between border-b border-line/60 px-3.5 py-2.5">
-                <p className="text-[13px] font-semibold text-ink">Messages</p>
-                <button
-                  type="button"
-                  onClick={() => set_open(false)}
-                  aria-label="Close"
-                  className="grid h-6 w-6 place-items-center rounded-md text-muted transition-colors hover:text-ink"
-                >
-                  <XIcon size={14} />
-                </button>
-              </div>
-            )}
+            <div className="flex shrink-0 items-center gap-2.5 border-b border-line/60 px-3.5 py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] sm:pt-2.5">
+              {active_person ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={back_to_list}
+                    aria-label="Back to conversations"
+                    className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted transition-colors hover:text-ink"
+                  >
+                    <ChevronLeftIcon size={15} />
+                  </button>
+                  <ChatAvatar
+                    url={active_person.avatar_url}
+                    name={active_person.name}
+                    size="sm"
+                    status={effective_status(active_person.status, active_person.last_seen_at)}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[12.5px] font-semibold leading-tight text-ink">{active_person.name}</p>
+                    <p className={`text-[10px] leading-tight ${status_tone[effective_status(active_person.status, active_person.last_seen_at)].text}`}>
+                      {status_tone[effective_status(active_person.status, active_person.last_seen_at)].label}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <p className="flex-1 text-[13px] font-semibold text-ink">Messages</p>
+              )}
+
+              <button
+                type="button"
+                onClick={() => set_expanded(x => !x)}
+                aria-label={expanded ? "Shrink" : "Expand"}
+                className="hidden h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted transition-colors hover:text-ink sm:grid"
+              >
+                {expanded ? <ShrinkIcon size={13} /> : <ExpandIcon size={13} />}
+              </button>
+              <button
+                type="button"
+                onClick={close_widget}
+                aria-label="Close"
+                className="grid h-7 w-7 shrink-0 cursor-pointer place-items-center rounded-md text-muted transition-colors hover:text-ink sm:h-6 sm:w-6"
+              >
+                <XIcon size={14} />
+              </button>
+            </div>
 
             {active_person ? (
               <MessageThread
                 me={me!}
-                person={active_person}
+                first_name={active_person.name.split(" ")[0]}
                 messages={messages}
                 loading={thread_loading}
                 sending={sending}
-                on_back={back_to_list}
                 on_send={handle_send}
               />
             ) : (
@@ -261,7 +316,9 @@ export const ChatWidget = () => {
         type="button"
         onClick={toggle_open}
         aria-label={open ? "Close messages" : "Open messages"}
-        className="fixed bottom-4 right-20 z-40 grid h-12 w-12 place-items-center rounded-full bg-flag-red text-white shadow-lg shadow-flag-red/30 transition hover:scale-105 active:scale-95"
+        className={`fixed bottom-4 right-20 z-40 h-12 w-12 cursor-pointer place-items-center rounded-full bg-flag-red text-white shadow-lg shadow-flag-red/30 transition hover:scale-105 active:scale-95 ${
+          !open ? "grid" : expanded ? "hidden" : "hidden sm:grid"
+        }`}
       >
         <MessageSquareIcon size={19} />
         {total_unread > 0 && (

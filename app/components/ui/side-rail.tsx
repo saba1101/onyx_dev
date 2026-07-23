@@ -3,7 +3,8 @@ import { Form, Link, useLocation } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "~/features/auth/lib/auth";
 import { useProfile } from "~/features/profile/lib/profile-context";
-import { status_tone } from "~/features/profile/lib/profile";
+import { effective_status, status_tone } from "~/features/profile/lib/profile";
+import { use_presence_tick } from "~/hooks/use-presence-tick";
 import { AvatarUploader } from "~/features/profile/components/avatar-uploader";
 import {
   PencilIcon,
@@ -48,6 +49,7 @@ const Brand = ({ hidden }: { hidden: string }) => (
 const UserCard = ({ collapsed }: { collapsed: boolean }) => {
   const { user } = useAuth();
   const { profile } = useProfile();
+  use_presence_tick(30_000);
 
   if (!user) return null;
 
@@ -56,7 +58,7 @@ const UserCard = ({ collapsed }: { collapsed: boolean }) => {
     profile?.username ||
     user.email?.split("@")[0] ||
     "User";
-  const tone = status_tone[profile?.status ?? "active"];
+  const tone = status_tone[effective_status(profile?.status ?? "active", profile?.last_seen_at ?? null)];
   const label_hidden = collapsed ? "lg:hidden" : "";
 
   return (

@@ -12,34 +12,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const session_ref = useRef<Session | null>(null)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // A single source of truth for session state — onAuthStateChange fires
+    // once with "INITIAL_SESSION" right on subscribe (session restore or
+    // logged-out), then again on sign-in/token refresh. Awaiting the presence
+    // touch *before* set_user means ProfileProvider's fetch (triggered by the
+    // user id changing) always reads an already-fresh row instead of racing
+    // the write — that race was why status/last_seen_at could show stale
+    // right after signing in.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       session_ref.current = session
+
+      if (session?.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) {
+        await supabase
+          .from("profiles")
+          .update(
+            event === "SIGNED_IN"
+              ? { status: "active", last_seen_at: new Date().toISOString() }
+              : { last_seen_at: new Date().toISOString() },
+          )
+          .eq("id", session.user.id)
+      }
+
       set_user(session?.user ?? null)
       set_loading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      session_ref.current = session
-      set_user(session?.user ?? null)
-
-      if (event === "SIGNED_IN" && session?.user) {
-        // Fresh sign-in → mark active and record presence
-        supabase
-          .from("profiles")
-          .update({ status: "active", last_seen_at: new Date().toISOString() })
-          .eq("id", session.user.id)
-          .then(() => {})
-      } else if (
-        (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") &&
-        session?.user
-      ) {
-        // Session restore / token refresh → update presence without changing status
-        supabase
-          .from("profiles")
-          .update({ last_seen_at: new Date().toISOString() })
-          .eq("id", session.user.id)
-          .then(() => {})
-      }
     })
 
     // ── Presence heartbeat ────────────────────────────────────────────────────

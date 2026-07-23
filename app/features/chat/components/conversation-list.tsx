@@ -51,7 +51,7 @@ export const ConversationList = ({ items, query, on_query_change, on_select, loa
             key={item.id}
             type="button"
             onClick={() => on_select(item.id)}
-            className="flex w-full items-center gap-2.5 border-b border-line/40 px-3 py-2.5 text-left transition-colors last:border-0 hover:bg-flag-red/[0.04] dark:hover:bg-flag-red/[0.06]"
+            className="flex w-full cursor-pointer items-center gap-2.5 border-b border-line/40 px-3 py-2.5 text-left transition-colors last:border-0 hover:bg-flag-red/[0.04] dark:hover:bg-flag-red/[0.06]"
           >
             <ChatAvatar url={item.avatar_url} name={item.name} status={effective_status(item.status, item.last_seen_at)} />
             <div className="min-w-0 flex-1">

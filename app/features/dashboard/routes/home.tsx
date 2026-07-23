@@ -360,6 +360,7 @@ const Home = () => {
   const notify                          = use_notify()
   const [params, set_params]            = useSearchParams()
   const greeted                         = useRef(false)
+  use_presence_tick(30_000)
 
   const [member_count,  set_member_count]  = useState<number | null>(null)
   const [github_name,   set_github_name]   = useState<string | null>(null)
@@ -423,7 +424,7 @@ const Home = () => {
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
   const today    = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })
 
-  const tone       = status_tone[profile?.status ?? "active"]
+  const tone       = status_tone[effective_status(profile?.status ?? "active", profile?.last_seen_at ?? null)]
   const role       = profile?.role ?? "member"
   const display    = profile?.full_name || profile?.username || user.email?.split("@")[0] || "User"
   const pct        = completion_pct(profile)
