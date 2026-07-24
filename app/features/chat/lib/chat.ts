@@ -1,6 +1,11 @@
 import { supabase } from "~/lib/supabase"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 
+// Mirrors the `char_length(body) between 1 and 2000` check constraint on
+// public.messages — enforced client-side so the composer can't produce a
+// message the DB will just reject.
+export const MAX_MESSAGE_LEN = 2000
+
 export type Message = {
   id:           string
   sender_id:    string

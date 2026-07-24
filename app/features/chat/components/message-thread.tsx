@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { SendIcon } from "~/components/ui/icons"
 import { EmojiPopover } from "~/features/chat/components/emoji-popover"
-import { fmt_time, type Message } from "~/features/chat/lib/chat"
+import { fmt_time, MAX_MESSAGE_LEN, type Message } from "~/features/chat/lib/chat"
 
 type Props = {
   me:          string
@@ -71,6 +71,7 @@ export const MessageThread = ({ me, first_name, messages, loading, sending, on_s
           value={draft}
           onChange={e => set_draft(e.target.value)}
           placeholder={`Message ${first_name}…`}
+          maxLength={MAX_MESSAGE_LEN}
           className="w-full min-w-0 flex-1 rounded-full border border-line bg-page/60 px-3 py-1.5 text-[12.5px] text-ink outline-none placeholder:text-muted"
         />
         <button

@@ -7,6 +7,17 @@ import {
   type WProject, type StatusColor, type ProjectVisibility,
 } from "~/features/workspace/lib/workspace"
 
+// Seeded onto every new project so a board is immediately usable instead of
+// starting empty — the same three-stage flow ("To Do" / "In Progress" /
+// "Done") every Kanban tool defaults to. Colors match STATUS_COLORS; "Done"
+// is green so is_done_status()'s name check (board.tsx) and the completed-
+// task styling line up out of the box.
+const DEFAULT_STATUSES: { name: string; color: StatusColor }[] = [
+  { name: "To Do",       color: "gray"  },
+  { name: "In Progress", color: "blue"  },
+  { name: "Done",        color: "green" },
+]
+
 type Props = {
   open:       boolean
   editing:    WProject | null
@@ -44,8 +55,19 @@ export const ProjectModal = ({ open, editing, owner_id, on_close, on_saved, on_d
         name: name.trim(), description: description.trim() || null,
         color, visibility, owner_id,
       })
-      if (error) notify({ tone: "error", title: "Failed to create project", message: error.message })
-      else { on_saved(data as WProject); on_close() }
+      if (error) {
+        notify({ tone: "error", title: "Failed to create project", message: error.message })
+      } else {
+        const project = data as WProject
+        const seeded = await Promise.all(
+          DEFAULT_STATUSES.map((s, i) => api.statuses.create(project.id, s.name, s.color, i)),
+        )
+        if (seeded.some(r => r.error)) {
+          notify({ tone: "error", title: "Project created", message: "Default columns couldn't be added — add them from the board." })
+        }
+        on_saved(project)
+        on_close()
+      }
     } else {
       const { data, error } = await api.projects.update(editing!.id, {
         name: name.trim(), description: description.trim() || null, color, visibility,

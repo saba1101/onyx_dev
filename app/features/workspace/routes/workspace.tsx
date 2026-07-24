@@ -8,8 +8,9 @@ import { use_notify } from "~/hooks/use-notify"
 import { SearchInput } from "~/components/ui/search-input"
 import { Dropdown } from "~/components/ui/dropdown"
 import { ProjectModal } from "~/features/workspace/components/project-modal"
+import { ConfirmPopover } from "~/components/ui/confirm-popover"
 import {
-  PlusIcon, PencilIcon, LockIcon, GlobeIcon, ChevronIcon,
+  PlusIcon, PencilIcon, TrashIcon, LockIcon, GlobeIcon, ChevronIcon,
 } from "~/components/ui/icons"
 import {
   api, fmt_rel, STATUS_COLORS,
@@ -42,14 +43,16 @@ const KanbanIcon = () => (
 // ── Project card (grid) ────────────────────────────────────────────────────────
 
 const ProjectCard = ({
-  project, task_count, owner_label, can_edit, on_open, on_edit,
+  project, task_count, owner_label, can_edit, deleting, on_open, on_edit, on_delete,
 }: {
   project:     WProject
   task_count:  number
   owner_label: string | null
   can_edit:    boolean
+  deleting:    boolean
   on_open:     () => void
   on_edit:     () => void
+  on_delete:   () => void
 }) => {
   const c = STATUS_COLORS[project.color]
   return (
@@ -60,14 +63,31 @@ const ProjectCard = ({
       className="surface group relative flex cursor-pointer flex-col gap-3 rounded-2xl p-4 transition-shadow hover:shadow-lg"
     >
       {can_edit && (
-        <button
-          type="button"
-          onClick={e => { e.stopPropagation(); on_edit() }}
-          title="Edit project"
-          className="absolute right-3 top-3 grid h-7 w-7 cursor-pointer place-items-center rounded-lg text-muted opacity-0 transition-opacity hover:bg-line/50 hover:text-ink group-hover:opacity-100"
-        >
-          <PencilIcon size={12} />
-        </button>
+        <div className="absolute right-3 top-3 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <button
+            type="button"
+            onClick={e => { e.stopPropagation(); on_edit() }}
+            title="Edit project"
+            className="grid h-7 w-7 cursor-pointer place-items-center rounded-lg text-muted transition-colors hover:bg-line/50 hover:text-ink"
+          >
+            <PencilIcon size={12} />
+          </button>
+          <ConfirmPopover
+            message={`Delete "${project.name}"? This removes the project, its columns and all its tasks.`}
+            busy={deleting}
+            on_confirm={on_delete}
+            trigger={({ onClick }) => (
+              <button
+                type="button"
+                onClick={onClick}
+                title="Delete project"
+                className="grid h-7 w-7 cursor-pointer place-items-center rounded-lg text-muted transition-colors hover:bg-flag-red/10 hover:text-flag-red"
+              >
+                <TrashIcon size={12} />
+              </button>
+            )}
+          />
+        </div>
       )}
 
       <div className="flex items-center gap-3">
@@ -98,14 +118,16 @@ const ProjectCard = ({
 // ── Project row (list) ─────────────────────────────────────────────────────────
 
 const ProjectRow = ({
-  project, task_count, owner_label, can_edit, on_open, on_edit,
+  project, task_count, owner_label, can_edit, deleting, on_open, on_edit, on_delete,
 }: {
   project:     WProject
   task_count:  number
   owner_label: string | null
   can_edit:    boolean
+  deleting:    boolean
   on_open:     () => void
   on_edit:     () => void
+  on_delete:   () => void
 }) => {
   const c = STATUS_COLORS[project.color]
   return (
@@ -132,13 +154,30 @@ const ProjectRow = ({
       <td className="hidden px-4 py-3 text-[11px] text-muted lg:table-cell">{fmt_rel(project.updated_at)}</td>
       <td className="px-4 py-3 text-right">
         {can_edit ? (
-          <button
-            type="button"
-            onClick={e => { e.stopPropagation(); on_edit() }}
-            className="inline-flex items-center gap-1 rounded-lg border border-line px-2.5 py-1 text-[11px] font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-flag-red"
-          >
-            <PencilIcon size={11} /> Edit
-          </button>
+          <div className="flex items-center justify-end gap-1.5">
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); on_edit() }}
+              className="inline-flex items-center gap-1 rounded-lg border border-line px-2.5 py-1 text-[11px] font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-flag-red"
+            >
+              <PencilIcon size={11} /> Edit
+            </button>
+            <ConfirmPopover
+              message={`Delete "${project.name}"? This removes the project, its columns and all its tasks.`}
+              busy={deleting}
+              on_confirm={on_delete}
+              trigger={({ onClick }) => (
+                <button
+                  type="button"
+                  onClick={onClick}
+                  title="Delete project"
+                  className="grid h-[26px] w-[26px] cursor-pointer place-items-center rounded-lg border border-line text-muted transition-colors hover:border-flag-red/40 hover:bg-flag-red/10 hover:text-flag-red"
+                >
+                  <TrashIcon size={11} />
+                </button>
+              )}
+            />
+          </div>
         ) : (
           <span className="inline-flex items-center gap-1 rounded-lg border border-line px-2.5 py-1 text-[11px] font-medium text-muted transition-colors group-hover:border-flag-red/40 group-hover:text-flag-red">
             Open <ChevronIcon size={11} className="-rotate-90" />
@@ -171,6 +210,7 @@ export default function WorkspacePage() {
   )
   const [modal_open, set_modal_open] = useState(false)
   const [editing,    set_editing]    = useState<WProject | null>(null)
+  const [deleting_id, set_deleting_id] = useState<string | null>(null)
 
   const load = () => {
     Promise.all([api.projects.list(), api.tasks.count_by_project(), api.profiles.list()]).then(
@@ -224,6 +264,14 @@ export default function WorkspacePage() {
   }
   const on_deleted = (id: string) => {
     set_projects(prev => prev.filter(p => p.id !== id))
+  }
+
+  const on_confirm_delete = async (id: string) => {
+    set_deleting_id(id)
+    const { error } = await api.projects.remove(id)
+    if (error) notify({ tone: "error", title: "Failed to delete project", message: error.message })
+    else on_deleted(id)
+    set_deleting_id(null)
   }
 
   if (auth_loading) return null
@@ -357,8 +405,10 @@ export default function WorkspacePage() {
                   task_count={counts.get(p.id) ?? 0}
                   owner_label={owner_label(p)}
                   can_edit={p.owner_id === user.id || is_root}
+                  deleting={deleting_id === p.id}
                   on_open={() => navigate(`/workspace/${p.id}`)}
                   on_edit={() => open_edit(p)}
+                  on_delete={() => on_confirm_delete(p.id)}
                 />
               ))}
             </div>
@@ -383,8 +433,10 @@ export default function WorkspacePage() {
                       task_count={counts.get(p.id) ?? 0}
                       owner_label={owner_label(p)}
                       can_edit={p.owner_id === user.id || is_root}
+                      deleting={deleting_id === p.id}
                       on_open={() => navigate(`/workspace/${p.id}`)}
                       on_edit={() => open_edit(p)}
+                      on_delete={() => on_confirm_delete(p.id)}
                     />
                   ))}
                 </tbody>

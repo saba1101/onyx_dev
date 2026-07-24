@@ -34,7 +34,7 @@ export const ChatWidget = () => {
   const [active_id, set_active_id]       = useState<string | null>(null)
   const [messages, set_messages]         = useState<Message[]>([])
   const [thread_loading, set_thread_loading] = useState(false)
-  const [sending, set_sending]           = useState(false)
+  const [sending_to, set_sending_to]     = useState<string | null>(null)
   const [toast, set_toast]               = useState<Toast | null>(null)
 
   const me = user?.id
@@ -42,6 +42,23 @@ export const ChatWidget = () => {
   const refresh_conversations = useCallback(async () => {
     if (!me) return
     try { set_conversations(await api.conversations.list()) } catch { /* stays as-is */ }
+  }, [me])
+
+  // Runs whenever the signed-in user changes (including logout, where `me`
+  // becomes undefined) — the widget never unmounts on logout, so without
+  // this reset a different account signing in on the same tab could
+  // briefly show the previous user's cached conversations/messages.
+  useEffect(() => {
+    set_open(false)
+    set_expanded(false)
+    set_directory([])
+    set_conversations([])
+    set_loaded(false)
+    set_query("")
+    set_active_id(null)
+    set_messages([])
+    set_sending_to(null)
+    set_toast(null)
   }, [me])
 
   useEffect(() => {
@@ -108,16 +125,27 @@ export const ChatWidget = () => {
     }
   }, [active_id, directory_map, conv_map])
 
+  // Refs so async work (realtime subscription, in-flight thread loads/sends)
+  // always sees current UI state without racing the state that triggered it.
+  const open_ref = useRef(open); open_ref.current = open
+  const active_ref = useRef(active_id); active_ref.current = active_id
+  const dir_map_ref = useRef(directory_map); dir_map_ref.current = directory_map
+
   const open_thread = async (id: string) => {
     if (!me) return
     set_active_id(id)
     set_messages([])
     set_thread_loading(true)
     try {
-      set_messages(await api.messages.list(id, me))
+      const loaded_messages = await api.messages.list(id, me)
+      // The user may have switched to a different (or no) thread while this
+      // was in flight — a slower response for an older selection must not
+      // clobber whatever thread is actually showing now.
+      if (active_ref.current !== id) return
+      set_messages(loaded_messages)
       api.messages.mark_read(id, me).then(refresh_conversations)
     } finally {
-      set_thread_loading(false)
+      if (active_ref.current === id) set_thread_loading(false)
     }
   }
 
@@ -129,30 +157,32 @@ export const ChatWidget = () => {
   const toggle_open = () => (open ? close_widget() : set_open(true))
 
   const handle_send = async (body: string) => {
-    if (!me || !active_id) return
-    set_sending(true)
+    const target = active_id
+    if (!me || !target) return
+    set_sending_to(target)
     const optimistic: Message = {
-      id: `tmp_${Date.now()}`, sender_id: me, recipient_id: active_id,
+      id: `tmp_${Date.now()}`, sender_id: me, recipient_id: target,
       body, created_at: new Date().toISOString(), read_at: null,
     }
     set_messages(m => [...m, optimistic])
     try {
-      const saved = await api.messages.send(active_id, me, body)
-      set_messages(m => m.map(x => (x.id === optimistic.id ? saved : x)))
+      const saved = await api.messages.send(target, me, body)
+      // If the user has since switched threads, the target thread's
+      // messages array isn't in state anymore — nothing to reconcile here,
+      // it'll load fresh (already sent) next time that thread is opened.
+      if (active_ref.current === target) {
+        set_messages(m => m.map(x => (x.id === optimistic.id ? saved : x)))
+      }
       refresh_conversations()
     } catch {
-      set_messages(m => m.filter(x => x.id !== optimistic.id))
+      if (active_ref.current === target) {
+        set_messages(m => m.filter(x => x.id !== optimistic.id))
+      }
       notify({ tone: "error", title: "Message not sent", message: "Try again in a moment." })
     } finally {
-      set_sending(false)
+      set_sending_to(null)
     }
   }
-
-  // Refs so the realtime subscription (mounted once per session) always
-  // sees current UI state without needing to resubscribe on every toggle.
-  const open_ref = useRef(open); open_ref.current = open
-  const active_ref = useRef(active_id); active_ref.current = active_id
-  const dir_map_ref = useRef(directory_map); dir_map_ref.current = directory_map
 
   useEffect(() => {
     const t = setTimeout(() => set_toast(null), 5000)
@@ -170,12 +200,21 @@ export const ChatWidget = () => {
       }
 
       refresh_conversations()
+
+      // Only worth surfacing a toast if the widget is actually closed — if
+      // it's open (e.g. showing the conversation list), the arrival is
+      // already visible there. Otherwise the toast state would linger and
+      // could pop up later if the panel gets closed within the dismiss
+      // window, re-announcing something already seen.
+      if (open_ref.current) return
+
       const known = dir_map_ref.current[msg.sender_id]
       const name = known?.full_name || known?.username || null
       if (name) {
         set_toast({ key: msg.id, sender_id: msg.sender_id, name, avatar_url: known.avatar_url, body: msg.body })
       } else {
         const p = await api.profile.peek(msg.sender_id)
+        if (open_ref.current) return
         set_toast({
           key: msg.id, sender_id: msg.sender_id,
           name: p?.full_name || p?.username || "Someone", avatar_url: p?.avatar_url ?? null, body: msg.body,
@@ -296,7 +335,7 @@ export const ChatWidget = () => {
                 first_name={active_person.name.split(" ")[0]}
                 messages={messages}
                 loading={thread_loading}
-                sending={sending}
+                sending={sending_to === active_id}
                 on_send={handle_send}
               />
             ) : (
