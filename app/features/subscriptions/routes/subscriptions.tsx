@@ -30,6 +30,11 @@ const ease_out = [0.22, 1, 0.36, 1] as const
 
 const initials = (name: string) => name.trim().slice(0, 2).toUpperCase() || "?"
 
+// Tone for a header stat, driven by the sign of the money it represents —
+// positive flow reads as gain (green), negative as loss (red), zero stays neutral.
+const flow_tone = (n: number): "gain" | "loss" | undefined =>
+  n > 0 ? "gain" : n < 0 ? "loss" : undefined
+
 const net_of = (service_id: string, entries: Entry[]) =>
   entries.reduce((sum, e) => e.service_id === service_id ? sum + (e.kind === "income" ? e.amount : -e.amount) : sum, 0)
 
@@ -48,7 +53,7 @@ const ChartTip = ({ active, payload, label }: { active?: boolean; payload?: { va
   return (
     <div className="rounded-xl border border-line bg-card px-3 py-2 text-xs shadow-xl">
       {label && <p className="mb-1 text-[10px] uppercase tracking-wide text-muted/60">{fmt_date(label)}</p>}
-      <p className={`font-semibold ${v >= 0 ? "text-light-green" : "text-flag-red"}`}>{fmt_money(v)}</p>
+      <p className={`font-semibold ${v >= 0 ? "text-light-green" : "text-loss"}`}>{fmt_money(v)}</p>
     </div>
   )
 }
@@ -61,7 +66,7 @@ const Sparkline = ({ service_id, entries }: { service_id: string; entries: Entry
     return <div className="flex h-7 items-center text-[10px] italic text-muted/50">No entries yet</div>
   }
   const positive = points[points.length - 1].balance >= 0
-  const color = positive ? "var(--color-light-green)" : "var(--color-flag-red)"
+  const color = positive ? "var(--color-light-green)" : "var(--color-loss)"
   return (
     <ResponsiveContainer width="100%" height={28}>
       <AreaChart data={points} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
@@ -133,7 +138,7 @@ const build_service_columns = (
     align: "right",
     cell: s => {
       const net = net_of(s.id, entries)
-      return <span className={`text-sm font-bold tabular-nums ${net >= 0 ? "text-light-green" : "text-flag-red"}`}>{fmt_money(net)}</span>
+      return <span className={`text-sm font-bold tabular-nums ${net >= 0 ? "text-light-green" : "text-loss"}`}>{fmt_money(net)}</span>
     },
   },
   {
@@ -177,7 +182,7 @@ const LedgerRow = ({ entry, on_edit, on_delete }: { entry: Entry; on_edit: () =>
   <tr className="group border-b border-line/40 last:border-0 even:bg-muted/[0.08]">
     <td className="py-2 pl-3 pr-3 text-[11px] text-muted">{fmt_date(entry.occurred_on)}</td>
     <td className="py-2 pr-3">
-      <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase ${entry.kind === "income" ? "bg-light-green/15 text-light-green" : "bg-flag-red/10 text-flag-red"}`}>
+      <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase ${entry.kind === "income" ? "bg-light-green/15 text-light-green" : "bg-loss/10 text-loss"}`}>
         {entry.kind === "income" ? <ArrowUpIcon size={9} /> : <ArrowDownIcon size={9} />}
         {entry.kind === "income" ? "Gain" : "Spend"}
       </span>
@@ -190,7 +195,7 @@ const LedgerRow = ({ entry, on_edit, on_delete }: { entry: Entry; on_edit: () =>
         </span>
       )}
     </td>
-    <td className={`py-2 pr-2 text-right text-xs font-semibold tabular-nums ${entry.kind === "income" ? "text-light-green" : "text-flag-red"}`}>
+    <td className={`py-2 pr-2 text-right text-xs font-semibold tabular-nums ${entry.kind === "income" ? "text-light-green" : "text-loss"}`}>
       {entry.kind === "income" ? "+" : "-"}{fmt_money(entry.amount).replace("-", "")}
     </td>
     <td className="w-14 py-2 pr-1">
@@ -251,7 +256,7 @@ const DetailModal = ({
 
         <div className="flex items-center gap-2">
           <div className="text-right">
-            <p className={`text-xl font-bold tabular-nums ${net >= 0 ? "text-light-green" : "text-flag-red"}`}>{fmt_money(net)}</p>
+            <p className={`text-xl font-bold tabular-nums ${net >= 0 ? "text-light-green" : "text-loss"}`}>{fmt_money(net)}</p>
             <p className="text-[9.5px] uppercase tracking-wide text-muted">net, all time</p>
           </div>
           <button onClick={on_edit_service} className="grid h-8 w-8 place-items-center rounded-lg border border-line text-muted transition-colors hover:bg-line/40 hover:text-ink" title="Edit service">
@@ -263,7 +268,7 @@ const DetailModal = ({
       <div className="mb-4 flex flex-wrap gap-2">
         <button
           onClick={() => on_log("expense")}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-flag-red/30 bg-flag-red/5 px-3 py-1.5 text-xs font-medium text-flag-red transition-colors hover:bg-flag-red/10"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-loss/30 bg-loss/5 px-3 py-1.5 text-xs font-medium text-loss transition-colors hover:bg-loss/10"
         >
           <PlusIcon size={11} /> Log spend
         </button>
@@ -317,15 +322,15 @@ const DetailModal = ({
                 <AreaChart data={chart} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="net_fill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={net >= 0 ? "var(--color-light-green)" : "var(--color-flag-red)"} stopOpacity={0.25} />
-                      <stop offset="95%" stopColor={net >= 0 ? "var(--color-light-green)" : "var(--color-flag-red)"} stopOpacity={0} />
+                      <stop offset="5%" stopColor={net >= 0 ? "var(--color-light-green)" : "var(--color-loss)"} stopOpacity={0.25} />
+                      <stop offset="95%" stopColor={net >= 0 ? "var(--color-light-green)" : "var(--color-loss)"} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke="var(--color-line)" strokeOpacity={0.5} strokeDasharray="3 3" />
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--color-muted)" }} axisLine={false} tickLine={false} tickFormatter={d => fmt_date(d).replace(/, \d+$/, "")} />
                   <YAxis tick={{ fontSize: 9, fill: "var(--color-muted)" }} axisLine={false} tickLine={false} />
                   <Tooltip content={<ChartTip />} />
-                  <Area type="monotone" dataKey="balance" stroke={net >= 0 ? "var(--color-light-green)" : "var(--color-flag-red)"} strokeWidth={2} fill="url(#net_fill)" dot={false} />
+                  <Area type="monotone" dataKey="balance" stroke={net >= 0 ? "var(--color-light-green)" : "var(--color-loss)"} strokeWidth={2} fill="url(#net_fill)" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -538,8 +543,8 @@ export default function SubscriptionsPage() {
 
           {!fetching && (
             <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <StatTile label="Total spent" value={fmt_money(-total_spent)} tone="loss" icon={<TrendingDownIcon size={13} />} />
-              <StatTile label="Total gained" value={fmt_money(total_gained)} tone="gain" icon={<TrendingUpIcon size={13} />} />
+              <StatTile label="Total spent" value={fmt_money(-total_spent)} tone={flow_tone(-total_spent)} icon={<TrendingDownIcon size={13} />} />
+              <StatTile label="Total gained" value={fmt_money(total_gained)} tone={flow_tone(total_gained)} icon={<TrendingUpIcon size={13} />} />
               <StatTile
                 label="Net" value={fmt_money(net_all)} tone={net_all >= 0 ? "gain" : "loss"} hero
                 icon={net_all >= 0 ? <TrendingUpIcon size={13} /> : <TrendingDownIcon size={13} />}
@@ -642,9 +647,9 @@ const StatTile = ({
   sub?:  string
   hero?: boolean
 }) => {
-  const value_cls = tone === "gain" ? "text-light-green" : tone === "loss" ? "text-flag-red" : "text-ink"
-  const icon_cls  = tone === "gain" ? "bg-light-green/10 text-light-green" : tone === "loss" ? "bg-flag-red/10 text-flag-red" : "bg-royal-gold/10 text-royal-gold"
-  const wash       = tone === "gain" ? "border-light-green/25 bg-light-green/[0.04]" : tone === "loss" ? "border-flag-red/25 bg-flag-red/[0.04]" : "border-royal-gold/20 bg-royal-gold/[0.04]"
+  const value_cls = tone === "gain" ? "text-light-green" : tone === "loss" ? "text-loss" : "text-ink"
+  const icon_cls  = tone === "gain" ? "bg-light-green/10 text-light-green" : tone === "loss" ? "bg-loss/10 text-loss" : "bg-royal-gold/10 text-royal-gold"
+  const wash       = tone === "gain" ? "border-light-green/25 bg-light-green/[0.04]" : tone === "loss" ? "border-loss/25 bg-loss/[0.04]" : "border-royal-gold/20 bg-royal-gold/[0.04]"
 
   return (
     <div className={`surface flex flex-col gap-3 rounded-2xl p-4 ${wash}`}>

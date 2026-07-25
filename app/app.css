@@ -10,6 +10,10 @@
   --color-flag-red: hsl(355 81% 47%);
   --color-royal-gold: hsl(49 93% 67%);
   --color-light-green: hsl(113 63% 66%);
+  /* Fixed negative/loss semantic color — deliberately NOT --color-flag-red,
+     which the settings accent picker overwrites at runtime (see use-accent.ts).
+     Gain/loss coding must stay red/green regardless of the chosen accent. */
+  --color-loss: hsl(355 81% 47%);
   --color-carbon-black: hsl(210 7% 11%);
   --color-obsidian: hsl(220 12% 6%);
   --color-platinum: hsl(210 17% 95%);
