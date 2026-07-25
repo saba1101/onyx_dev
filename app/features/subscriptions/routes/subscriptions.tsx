@@ -18,6 +18,7 @@ import {
 } from "~/components/ui/icons"
 import {
   api, COLOR_TONE, CYCLE_LABEL, monthly_equivalent, next_renewal, days_until, fmt_money, fmt_date,
+  compute_auto_entries, compute_auto_entries_for_all,
   type Service, type Entry, type EntryKind,
 } from "~/features/subscriptions/lib/subscriptions"
 
@@ -181,7 +182,14 @@ const LedgerRow = ({ entry, on_edit, on_delete }: { entry: Entry; on_edit: () =>
         {entry.kind === "income" ? "Gain" : "Spend"}
       </span>
     </td>
-    <td className="py-2 pr-3 text-xs text-ink">{entry.note || <span className="italic text-muted/40">—</span>}</td>
+    <td className="py-2 pr-3 text-xs text-ink">
+      {entry.note || <span className="italic text-muted/40">—</span>}
+      {entry.source === "auto" && (
+        <span className="ml-1.5 rounded-md bg-line/50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-muted" title="Auto-logged from recurring cycle">
+          Auto
+        </span>
+      )}
+    </td>
     <td className={`py-2 pr-2 text-right text-xs font-semibold tabular-nums ${entry.kind === "income" ? "text-light-green" : "text-flag-red"}`}>
       {entry.kind === "income" ? "+" : "-"}{fmt_money(entry.amount).replace("-", "")}
     </td>
@@ -220,6 +228,7 @@ const DetailModal = ({
     service.recurring_amount && service.recurring_cycle
       ? `$${service.recurring_amount.toFixed(2)}/${CYCLE_LABEL[service.recurring_cycle]}`
       : "Pay as you go",
+    service.recurring_cycle && service.start_date ? `since ${fmt_date(service.start_date)}` : null,
     renewal ? `renews ${fmt_date(renewal.toISOString())}` : null,
   ].filter(Boolean).join(" · ")
 
@@ -351,13 +360,30 @@ export default function SubscriptionsPage() {
   const [editing_entry,    set_editing_entry]    = useState<Entry | null>(null)
   const [default_kind,     set_default_kind]     = useState<EntryKind>("expense")
 
-  const load = () => {
-    Promise.all([api.services.list(), api.entries.list_all()]).then(([s, e]) => {
-      if (s.error) notify({ tone: "error", title: "Failed to load services", message: s.error.message })
-      else set_services((s.data as Service[]) ?? [])
-      set_entries((e.data as Entry[]) ?? [])
-      set_fetching(false)
-    })
+  const load = async () => {
+    const [s, e] = await Promise.all([api.services.list(), api.entries.list_all()])
+    if (s.error) notify({ tone: "error", title: "Failed to load services", message: s.error.message })
+    const svc = (s.data as Service[]) ?? []
+    const ent = (e.data as Entry[]) ?? []
+
+    // Backfill any recurring payments due since each service was registered,
+    // then re-load so the table reflects server-assigned rows. Idempotent —
+    // a re-run finds nothing left to insert once entries exist for a date.
+    const missing = compute_auto_entries_for_all(svc, ent)
+    if (missing.length) {
+      const { error } = await api.entries.bulk_create(missing)
+      if (error) {
+        notify({ tone: "error", title: "Failed to auto-log recurring payments", message: error.message })
+      } else {
+        set_services(svc)
+        set_fetching(false)
+        return load()
+      }
+    }
+
+    set_services(svc)
+    set_entries(ent)
+    set_fetching(false)
   }
 
   useEffect(() => { load() }, [])
@@ -401,12 +427,22 @@ export default function SubscriptionsPage() {
   const open_create_service = () => { set_editing_service(null); set_service_modal_open(true) }
   const open_edit_service   = (s: Service) => { set_editing_service(s); set_service_modal_open(true) }
 
-  const on_service_saved = (s: Service) => {
+  const on_service_saved = async (s: Service) => {
     set_services(prev => {
       const idx = prev.findIndex(x => x.id === s.id)
       return idx >= 0 ? prev.map(x => x.id === s.id ? s : x) : [s, ...prev]
     })
     set_selected_id(prev => prev ?? s.id)
+
+    // A new/edited recurring service can be immediately overdue for backfill
+    // (e.g. a past start date) — without this, renewal/net/trend stay blank
+    // until the next full load() re-runs the backfill.
+    const missing = compute_auto_entries(s, entries)
+    if (missing.length) {
+      const { data, error } = await api.entries.bulk_create(missing)
+      if (error) notify({ tone: "error", title: "Failed to auto-log recurring payments", message: error.message })
+      else if (data) set_entries(prev => [...prev, ...(data as Entry[])])
+    }
   }
   const on_service_deleted = (id: string) => {
     set_services(prev => prev.filter(s => s.id !== id))

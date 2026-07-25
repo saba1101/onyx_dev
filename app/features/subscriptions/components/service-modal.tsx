@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Modal } from "~/components/ui/modal"
 import { use_notify } from "~/hooks/use-notify"
 import { CheckIcon, TrashIcon } from "~/components/ui/icons"
+import { DatePicker } from "~/features/subscriptions/components/date-picker"
 import {
   api, COLOR_OPTIONS, COLOR_TONE,
   type Service, type ServiceColor, type ServiceStatus, type RecurringCycle,
@@ -29,6 +30,8 @@ const CYCLE_OPTS: { value: RecurringCycle; label: string }[] = [
   { value: "yearly", label: "Yearly" },
 ]
 
+const today = () => new Date().toISOString().slice(0, 10)
+
 type Props = {
   open:       boolean
   editing:    Service | null
@@ -49,6 +52,7 @@ export const ServiceModal = ({ open, editing, user_id, on_close, on_saved, on_de
   const [recurring,   set_recurring]   = useState(false)
   const [amount,      set_amount]      = useState("")
   const [cycle,       set_cycle]       = useState<RecurringCycle>("monthly")
+  const [start_date,  set_start_date]  = useState(today())
   const [url,         set_url]         = useState("")
   const [notes,       set_notes]       = useState("")
   const [saving,      set_saving]      = useState(false)
@@ -64,6 +68,7 @@ export const ServiceModal = ({ open, editing, user_id, on_close, on_saved, on_de
     set_recurring(!!editing?.recurring_amount)
     set_amount(editing?.recurring_amount ? String(editing.recurring_amount) : "")
     set_cycle(editing?.recurring_cycle ?? "monthly")
+    set_start_date(editing?.start_date ?? today())
     set_url(editing?.url ?? "")
     set_notes(editing?.notes ?? "")
   }, [open, editing?.id])
@@ -73,18 +78,19 @@ export const ServiceModal = ({ open, editing, user_id, on_close, on_saved, on_de
     set_saving(true)
     const recurring_amount = recurring && amount.trim() ? Number(amount) : null
     const recurring_cycle  = recurring && amount.trim() ? cycle : null
+    const start_date_val   = recurring && amount.trim() ? start_date : null
 
     if (is_new) {
       const { data, error } = await api.services.create({
         user_id, name: name.trim(), category: category.trim() || null, color,
-        recurring_amount, recurring_cycle, url: url.trim() || null, notes: notes.trim() || null,
+        recurring_amount, recurring_cycle, start_date: start_date_val, url: url.trim() || null, notes: notes.trim() || null,
       })
       if (error) notify({ tone: "error", title: "Failed to create service", message: error.message })
       else { on_saved(data as Service); on_close() }
     } else {
       const { data, error } = await api.services.update(editing!.id, {
         name: name.trim(), category: category.trim() || null, color, status,
-        recurring_amount, recurring_cycle, url: url.trim() || null, notes: notes.trim() || null,
+        recurring_amount, recurring_cycle, start_date: start_date_val, url: url.trim() || null, notes: notes.trim() || null,
       })
       if (error) notify({ tone: "error", title: "Failed to save", message: error.message })
       else { on_saved(data as Service); on_close() }
@@ -178,25 +184,34 @@ export const ServiceModal = ({ open, editing, user_id, on_close, on_saved, on_de
             This has a recurring cost
           </label>
           {recurring ? (
-            <div className="flex items-center gap-2 pt-1">
-              <div className="relative flex-1">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted">$</span>
-                <input
-                  type="number" min="0" step="0.01"
-                  value={amount}
-                  onChange={e => set_amount(e.target.value)}
-                  placeholder="15.99"
-                  className={`${field_cls} pl-6`}
-                />
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted">$</span>
+                  <input
+                    type="number" min="0" step="0.01"
+                    value={amount}
+                    onChange={e => set_amount(e.target.value)}
+                    placeholder="15.99"
+                    className={`${field_cls} pl-6`}
+                  />
+                </div>
+                <span className="text-xs text-muted">per</span>
+                <select
+                  value={cycle}
+                  onChange={e => set_cycle(e.target.value as RecurringCycle)}
+                  className="rounded-lg border border-line bg-page/60 px-2.5 py-2 text-sm text-ink outline-none focus:border-flag-red/50"
+                >
+                  {CYCLE_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
               </div>
-              <span className="text-xs text-muted">per</span>
-              <select
-                value={cycle}
-                onChange={e => set_cycle(e.target.value as RecurringCycle)}
-                className="rounded-lg border border-line bg-page/60 px-2.5 py-2 text-sm text-ink outline-none focus:border-flag-red/50"
-              >
-                {CYCLE_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-medium uppercase tracking-wide text-muted">Start date</label>
+                <DatePicker value={start_date} max={today()} onChange={set_start_date} />
+                <p className="text-[10.5px] text-muted/60">
+                  When this subscription actually started — used to backfill past payments as spend entries.
+                </p>
+              </div>
             </div>
           ) : (
             <p className="text-[11px] text-muted/70">Pay as you go — you'll log each spend and gain yourself.</p>

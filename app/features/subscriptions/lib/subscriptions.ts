@@ -4,6 +4,7 @@ export type ServiceColor    = "gray" | "blue" | "yellow" | "green" | "red" | "pu
 export type ServiceStatus   = "active" | "paused" | "cancelled"
 export type RecurringCycle  = "weekly" | "monthly" | "quarterly" | "yearly"
 export type EntryKind       = "income" | "expense"
+export type EntrySource     = "manual" | "auto"
 
 export type Service = {
   id:                string
@@ -14,6 +15,7 @@ export type Service = {
   status:            ServiceStatus
   recurring_amount:  number | null
   recurring_cycle:   RecurringCycle | null
+  start_date:        string | null
   url:               string | null
   notes:             string | null
   created_at:        string
@@ -28,6 +30,7 @@ export type Entry = {
   amount:      number
   occurred_on: string
   note:        string | null
+  source:      EntrySource
   created_at:  string
 }
 
@@ -70,14 +73,19 @@ export const monthly_equivalent = (amount: number, cycle: RecurringCycle) =>
   : cycle === "quarterly" ? amount / 3
   : amount / 12
 
+// The subscription's real-world start date — falls back to when the record
+// was added to Onyx if the user hasn't set one.
+const service_start_date = (service: Service): string =>
+  service.start_date ?? service.created_at.slice(0, 10)
+
 // Next renewal date: anchored to the latest logged expense for this service,
-// falling back to when the service was added if nothing's been logged yet.
+// falling back to the subscription's start date if nothing's been logged yet.
 export const next_renewal = (service: Service, entries: Entry[]): Date | null => {
   if (!service.recurring_cycle) return null
   const expenses = entries.filter(e => e.service_id === service.id && e.kind === "expense")
   const anchor = expenses.length
     ? expenses.reduce((latest, e) => e.occurred_on > latest ? e.occurred_on : latest, expenses[0].occurred_on)
-    : service.created_at.slice(0, 10)
+    : service_start_date(service)
   const d = new Date(anchor)
   d.setDate(d.getDate() + CYCLE_DAYS[service.recurring_cycle])
   return d
@@ -85,6 +93,59 @@ export const next_renewal = (service: Service, entries: Entry[]): Date | null =>
 
 export const days_until = (date: Date): number =>
   Math.ceil((date.getTime() - Date.now()) / 86_400_000)
+
+// Calendar-accurate step (unlike CYCLE_DAYS, which is a day-count approximation
+// used only for the monthly-equivalent stat) — Jan 31 monthly should land on
+// Feb 28/29, not "31 days later".
+const advance_cycle = (d: Date, cycle: RecurringCycle): Date => {
+  const next = new Date(d)
+  if (cycle === "weekly") next.setDate(next.getDate() + 7)
+  else if (cycle === "monthly") next.setMonth(next.getMonth() + 1)
+  else if (cycle === "quarterly") next.setMonth(next.getMonth() + 3)
+  else next.setFullYear(next.getFullYear() + 1)
+  return next
+}
+
+const to_date_str = (d: Date) => d.toISOString().slice(0, 10)
+
+// Backfills one auto-generated expense entry per elapsed cycle since the
+// subscription's start date, up to (and not past) today. Skips any cycle date
+// that already has an entry (manual or auto) so it's safe to re-run on every
+// page load without creating duplicates. Manual entries are untouched.
+export const compute_auto_entries = (
+  service: Service,
+  entries: Entry[],
+  today: Date = new Date(),
+): Array<{ user_id: string; service_id: string; kind: EntryKind; amount: number; occurred_on: string; note: string; source: EntrySource }> => {
+  if (service.status !== "active" || !service.recurring_amount || !service.recurring_cycle) return []
+
+  const covered = new Set(
+    entries.filter(e => e.service_id === service.id).map(e => e.occurred_on),
+  )
+
+  const out: Array<{ user_id: string; service_id: string; kind: EntryKind; amount: number; occurred_on: string; note: string; source: EntrySource }> = []
+  let due = advance_cycle(new Date(service_start_date(service)), service.recurring_cycle)
+
+  while (due.getTime() <= today.getTime()) {
+    const occurred_on = to_date_str(due)
+    if (!covered.has(occurred_on)) {
+      out.push({
+        user_id: service.user_id,
+        service_id: service.id,
+        kind: "expense",
+        amount: service.recurring_amount,
+        occurred_on,
+        note: "Auto-logged (recurring)",
+        source: "auto",
+      })
+    }
+    due = advance_cycle(due, service.recurring_cycle)
+  }
+  return out
+}
+
+export const compute_auto_entries_for_all = (services: Service[], entries: Entry[], today: Date = new Date()) =>
+  services.flatMap(s => compute_auto_entries(s, entries, today))
 
 export const fmt_money = (n: number) => {
   const sign = n < 0 ? "-" : ""
@@ -102,12 +163,12 @@ export const api = {
       supabase.from("finance_services").select("*").order("updated_at", { ascending: false }),
     create: (d: {
       user_id: string; name: string; category: string | null; color: ServiceColor
-      recurring_amount: number | null; recurring_cycle: RecurringCycle | null
+      recurring_amount: number | null; recurring_cycle: RecurringCycle | null; start_date: string | null
       url: string | null; notes: string | null
     }) =>
       supabase.from("finance_services").insert(d).select().single(),
     update: (id: string, patch: Partial<Pick<Service,
-      "name" | "category" | "color" | "status" | "recurring_amount" | "recurring_cycle" | "url" | "notes"
+      "name" | "category" | "color" | "status" | "recurring_amount" | "recurring_cycle" | "start_date" | "url" | "notes"
     >>) =>
       supabase.from("finance_services")
         .update({ ...patch, updated_at: new Date().toISOString() })
@@ -120,7 +181,9 @@ export const api = {
     list_all: () =>
       supabase.from("finance_entries").select("*").order("occurred_on", { ascending: true }),
     create: (d: { user_id: string; service_id: string; kind: EntryKind; amount: number; occurred_on: string; note: string | null }) =>
-      supabase.from("finance_entries").insert(d).select().single(),
+      supabase.from("finance_entries").insert({ ...d, source: "manual" as const }).select().single(),
+    bulk_create: (rows: Array<{ user_id: string; service_id: string; kind: EntryKind; amount: number; occurred_on: string; note: string; source: EntrySource }>) =>
+      supabase.from("finance_entries").insert(rows).select(),
     update: (id: string, patch: Partial<Pick<Entry, "kind" | "amount" | "occurred_on" | "note">>) =>
       supabase.from("finance_entries").update(patch).eq("id", id).select().single(),
     remove: (id: string) =>

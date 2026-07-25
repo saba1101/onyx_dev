@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Modal } from "~/components/ui/modal"
 import { use_notify } from "~/hooks/use-notify"
 import { CheckIcon, TrashIcon } from "~/components/ui/icons"
+import { DatePicker } from "~/features/subscriptions/components/date-picker"
 import { api, type Entry, type EntryKind } from "~/features/subscriptions/lib/subscriptions"
 
 const field_cls =
@@ -117,7 +118,7 @@ export const EntryModal = ({ open, service_id, user_id, editing, default_kind, o
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] font-medium uppercase tracking-wide text-muted">Date</label>
-            <input type="date" value={date} onChange={e => set_date(e.target.value)} className={field_cls} />
+            <DatePicker value={date} onChange={set_date} />
           </div>
         </div>
 
