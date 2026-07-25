@@ -361,8 +361,11 @@ export const ChatWidget = () => {
       >
         <MessageSquareIcon size={19} />
         {total_unread > 0 && (
-          <span className="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full border-2 border-page bg-royal-gold px-1 font-mono text-[9.5px] font-bold text-carbon-black">
-            {total_unread > 9 ? "9+" : total_unread}
+          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px]">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-royal-gold opacity-75" />
+            <span className="relative grid h-[18px] min-w-[18px] place-items-center rounded-full border-2 border-page bg-royal-gold px-1 font-mono text-[9.5px] font-bold text-carbon-black">
+              {total_unread > 9 ? "9+" : total_unread}
+            </span>
           </span>
         )}
       </button>
