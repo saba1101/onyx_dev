@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "motion/react"
 import { useAuth } from "~/features/auth/lib/auth"
 import { use_presence_tick } from "~/hooks/use-presence-tick"
 import { use_notify } from "~/hooks/use-notify"
+import { play_notification_ping, use_chat_sound_muted } from "~/hooks/use-chat-sound"
 import { supabase } from "~/lib/supabase"
 import { effective_status, status_tone } from "~/features/profile/lib/profile"
 import { list_public_profiles, type PublicProfile } from "~/features/users/lib/users"
@@ -10,7 +11,9 @@ import { api, subscribe_incoming, type Conversation, type Message } from "~/feat
 import { ConversationList, type ListItem } from "~/features/chat/components/conversation-list"
 import { MessageThread } from "~/features/chat/components/message-thread"
 import { ChatAvatar } from "~/features/chat/components/chat-avatar"
-import { MessageSquareIcon, ChevronLeftIcon, ExpandIcon, ShrinkIcon, XIcon } from "~/components/ui/icons"
+import {
+  MessageSquareIcon, ChevronLeftIcon, ExpandIcon, ShrinkIcon, XIcon, Volume2Icon, VolumeXIcon,
+} from "~/components/ui/icons"
 
 const ease_out = [0.22, 1, 0.36, 1] as const
 
@@ -24,6 +27,7 @@ export const ChatWidget = () => {
   const { user } = useAuth()
   const notify = use_notify()
   use_presence_tick(30_000)
+  const { muted: sound_muted, set_muted: set_sound_muted } = use_chat_sound_muted()
 
   const [open, set_open]                 = useState(false)
   const [expanded, set_expanded]         = useState(false)
@@ -130,6 +134,7 @@ export const ChatWidget = () => {
   const open_ref = useRef(open); open_ref.current = open
   const active_ref = useRef(active_id); active_ref.current = active_id
   const dir_map_ref = useRef(directory_map); dir_map_ref.current = directory_map
+  const sound_muted_ref = useRef(sound_muted); sound_muted_ref.current = sound_muted
 
   const open_thread = async (id: string) => {
     if (!me) return
@@ -198,6 +203,11 @@ export const ChatWidget = () => {
         refresh_conversations()
         return
       }
+
+      // Broader than the toast condition below — this fires whenever the
+      // incoming message isn't for the thread currently on screen, whether
+      // the widget is closed, open on a different thread, or open on the list.
+      if (!sound_muted_ref.current) play_notification_ping()
 
       refresh_conversations()
 
@@ -311,6 +321,15 @@ export const ChatWidget = () => {
                 <p className="flex-1 text-[13px] font-semibold text-ink">Messages</p>
               )}
 
+              <button
+                type="button"
+                onClick={() => set_sound_muted(!sound_muted)}
+                aria-label={sound_muted ? "Unmute message sounds" : "Mute message sounds"}
+                title={sound_muted ? "Unmute message sounds" : "Mute message sounds"}
+                className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted transition-colors hover:text-ink"
+              >
+                {sound_muted ? <VolumeXIcon size={13} /> : <Volume2Icon size={13} />}
+              </button>
               <button
                 type="button"
                 onClick={() => set_expanded(x => !x)}
