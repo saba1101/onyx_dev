@@ -136,7 +136,6 @@ const DetailModal = ({ user, current_uid, on_close, on_save, on_remove }: Detail
       open={!!user}
       on_close={() => { if (!saving && !deleting) { set_editing(false); set_confirm(null); on_close() } }}
       title={editing ? "Edit User" : display}
-      description="// user detail"
       size="xl"
     >
       {/* ── Hero row ── */}
@@ -545,7 +544,7 @@ const PublicDetailModal = ({ p, on_close }: { p: PublicProfile | null; on_close:
   const display = p.full_name || p.username || "User"
 
   return (
-    <Modal open={!!p} on_close={on_close} title={display} description="// profile" size="md">
+    <Modal open={!!p} on_close={on_close} title={display} size="md">
       {/* Hero */}
       <div className="mb-5 flex items-center gap-4 rounded-xl border border-line/60 bg-line/10 p-4 dark:bg-white/[0.02]">
         <div className="relative shrink-0">
@@ -641,7 +640,6 @@ const TeamView = () => {
           className="flex flex-wrap items-center justify-between gap-3 lg:absolute lg:inset-x-8 lg:top-2 lg:z-10"
         >
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
             <h1 className="text-sm font-semibold tracking-tight text-ink">Team</h1>
             <span className="text-[11px] text-muted">
               {fetching ? "Loading…" : `${profiles.length} member${profiles.length !== 1 ? "s" : ""}`}
@@ -800,7 +798,6 @@ const Users = () => {
         >
           {/* Left — title */}
           <div className="flex shrink-0 items-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
             <h1 className="text-sm font-semibold tracking-tight text-ink">Users</h1>
             <span className="text-[11px] text-muted">
               {fetching ? "Loading…" : `${users.length} registered`}

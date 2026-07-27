@@ -19,12 +19,6 @@ export const AuthShell = ({ title, subtitle, children, footer }: auth_shell_prop
     {/* Red accent stripe */}
     <div className="h-px bg-gradient-to-r from-transparent via-flag-red to-transparent opacity-75" />
 
-    {/* Corner brackets */}
-    <span aria-hidden className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 border-l-2 border-t-2 border-flag-red/30" />
-    <span aria-hidden className="pointer-events-none absolute right-3.5 top-3.5 h-4 w-4 border-r-2 border-t-2 border-flag-red/30" />
-    <span aria-hidden className="pointer-events-none absolute bottom-3.5 left-3.5 h-4 w-4 border-b-2 border-l-2 border-flag-red/30" />
-    <span aria-hidden className="pointer-events-none absolute bottom-3.5 right-3.5 h-4 w-4 border-b-2 border-r-2 border-flag-red/30" />
-
     <div className="p-6 pt-5">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -39,8 +33,7 @@ export const AuthShell = ({ title, subtitle, children, footer }: auth_shell_prop
         </span>
       </div>
 
-      <p className="text-[11px] uppercase tracking-wider text-flag-red">// access</p>
-      <h1 className="mt-1 text-lg font-semibold tracking-tight">{title}</h1>
+      <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
       <p className="mb-6 mt-0.5 text-xs text-muted">{subtitle}</p>
 
       {children}

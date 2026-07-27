@@ -12,7 +12,6 @@ export const PermissionModal = ({
     open={open}
     on_close={on_close}
     title="Access denied"
-    description="// permission required"
     size="sm"
   >
     <div className="flex flex-col items-center gap-5 pb-2 pt-1 text-center">

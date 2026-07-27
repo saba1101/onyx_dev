@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { Modal } from "~/components/ui/modal"
 import { use_notify } from "~/hooks/use-notify"
 import { CheckIcon, TrashIcon } from "~/components/ui/icons"
-import { DatePicker } from "~/features/subscriptions/components/date-picker"
+import { DatePicker } from "~/components/ui/date-picker"
 import {
   api, COLOR_OPTIONS, COLOR_TONE,
   type Service, type ServiceColor, type ServiceStatus, type RecurringCycle,
@@ -112,7 +112,6 @@ export const ServiceModal = ({ open, editing, user_id, on_close, on_saved, on_de
       open={open}
       on_close={on_close}
       title={is_new ? "New service" : "Edit service"}
-      description="// subscriptions"
       size="md"
     >
       <div className="space-y-4">

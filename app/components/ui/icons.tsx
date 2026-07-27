@@ -404,3 +404,12 @@ export const SmileIcon = make_stroke(
     <line x1="15" y1="9" x2="15.01" y2="9" />
   </>,
 )
+
+export const GridIcon = make_stroke(
+  <>
+    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+  </>,
+)

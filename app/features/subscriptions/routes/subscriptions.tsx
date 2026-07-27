@@ -238,7 +238,7 @@ const DetailModal = ({
   ].filter(Boolean).join(" · ")
 
   return (
-    <Modal open={!!service} on_close={on_close} title={service.name} description="// subscriptions" size="xl">
+    <Modal open={!!service} on_close={on_close} title={service.name} size="xl">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${tone.badge}`}>

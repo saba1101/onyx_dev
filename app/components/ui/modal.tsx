@@ -3,22 +3,22 @@ import { motion, AnimatePresence } from "motion/react"
 import { XIcon } from "~/components/ui/icons"
 
 const sizes = {
-  sm: "max-w-sm",
-  md: "max-w-lg",
-  lg: "max-w-2xl",
-  xl: "max-w-4xl",
+  sm:  "max-w-sm",
+  md:  "max-w-lg",
+  lg:  "max-w-2xl",
+  xl:  "max-w-4xl",
+  "2xl": "max-w-6xl",
 }
 
 type ModalProps = {
   open: boolean
   on_close: () => void
   title: string
-  description?: string
   size?: keyof typeof sizes
   children: ReactNode
 }
 
-export const Modal = ({ open, on_close, title, description, size = "md", children }: ModalProps) => {
+export const Modal = ({ open, on_close, title, size = "md", children }: ModalProps) => {
   useEffect(() => {
     if (!open) return
     const on_key = (e: KeyboardEvent) => { if (e.key === "Escape") on_close() }
@@ -54,24 +54,19 @@ export const Modal = ({ open, on_close, title, description, size = "md", childre
             exit={{ opacity: 0, scale: 0.97, y: 10 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className={`surface relative z-10 w-full ${sizes[size]} max-h-[90vh] overflow-hidden rounded-2xl flex flex-col`}
+            // `surface` alone is translucent (--surface-bg) so content behind can bleed
+            // through and wash out text, especially in light mode — bg-card forces a
+            // solid fill (Tailwind utilities win over the .surface component-layer rule)
+            // while keeping surface's border/shadow.
+            className={`surface bg-card relative z-10 w-full ${sizes[size]} max-h-[90vh] overflow-hidden rounded-2xl flex flex-col`}
           >
             {/* Accent stripe */}
             <div className="h-px shrink-0 bg-gradient-to-r from-transparent via-flag-red to-transparent opacity-75" />
 
-            {/* Corner brackets */}
-            <span aria-hidden className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 border-l-2 border-t-2 border-flag-red/30" />
-            <span aria-hidden className="pointer-events-none absolute right-3.5 top-3.5 h-4 w-4 border-r-2 border-t-2 border-flag-red/30" />
-            <span aria-hidden className="pointer-events-none absolute bottom-3.5 left-3.5 h-4 w-4 border-b-2 border-l-2 border-flag-red/30" />
-            <span aria-hidden className="pointer-events-none absolute bottom-3.5 right-3.5 h-4 w-4 border-b-2 border-r-2 border-flag-red/30" />
-
             {/* Header */}
             <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-4 pt-5">
               <div>
-                {description && (
-                  <p className="text-[11px] uppercase tracking-wider text-flag-red">{description}</p>
-                )}
-                <h2 id="modal-title" className="mt-0.5 text-base font-semibold tracking-tight">
+                <h2 id="modal-title" className="text-base font-semibold tracking-tight">
                   {title}
                 </h2>
               </div>

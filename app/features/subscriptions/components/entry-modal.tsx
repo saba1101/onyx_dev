@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { Modal } from "~/components/ui/modal"
 import { use_notify } from "~/hooks/use-notify"
 import { CheckIcon, TrashIcon } from "~/components/ui/icons"
-import { DatePicker } from "~/features/subscriptions/components/date-picker"
+import { DatePicker } from "~/components/ui/date-picker"
 import { api, type Entry, type EntryKind } from "~/features/subscriptions/lib/subscriptions"
 
 const field_cls =
@@ -77,7 +77,6 @@ export const EntryModal = ({ open, service_id, user_id, editing, default_kind, o
       open={open}
       on_close={on_close}
       title={is_new ? "Log an entry" : "Edit entry"}
-      description="// ledger"
       size="sm"
     >
       <div className="space-y-4">

@@ -19,8 +19,10 @@ import {
   GithubIcon, UsersIcon, GitBranchIcon, CalendarIcon,
   ShieldIcon, ChevronIcon, ClockIcon, UserIcon, PencilIcon,
   SettingsIcon, CheckIcon, MapPinIcon, BriefcaseIcon,
-  GlobeIcon, ActivityIcon,
+  GlobeIcon, ActivityIcon, GridIcon,
 } from "~/components/ui/icons"
+
+const ease_out = [0.22, 1, 0.36, 1] as const
 
 export const meta = () => [
   { title: "Onyx Dev" },
@@ -433,26 +435,32 @@ const Home = () => {
   const fade = (delay = 0) => ({
     initial:    { opacity: 0, y: 12 },
     animate:    { opacity: 1, y: 0 },
-    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const, delay },
+    transition: { duration: 0.4, ease: ease_out, delay },
   })
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-full overflow-hidden">
       <SideRail />
-      <main className="relative flex min-w-0 flex-1 flex-col gap-5 px-4 pb-12 pt-20 sm:px-6 lg:gap-6 lg:px-8 lg:pb-8 lg:pt-12">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden pt-14 lg:pt-0">
 
-        <motion.header
+        <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="flex items-center justify-between gap-4 lg:absolute lg:inset-x-8 lg:top-2 lg:z-10"
+          transition={{ duration: 0.25, ease: ease_out }}
+          className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line bg-card px-4 py-3 lg:px-6 lg:py-4"
         >
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
-            <h1 className="text-sm font-semibold tracking-tight text-ink">Dashboard</h1>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-flag-red/10 text-flag-red">
+              <GridIcon size={16} />
+            </span>
+            <div>
+              <h1 className="text-sm font-bold text-ink">Dashboard</h1>
+              <p className="text-[10px] text-muted">{today}</p>
+            </div>
           </div>
-          <span className="hidden text-[11px] text-muted sm:block">{today}</span>
-        </motion.header>
+        </motion.div>
+
+        <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-4 py-6 sm:px-6 lg:gap-6 lg:px-8 lg:py-8">
 
         {/* ── Welcome card ── */}
         <motion.div {...fade(0)} className="surface rounded-2xl p-5">
@@ -691,7 +699,7 @@ const Home = () => {
           </motion.section>
         )}
 
-
+        </div>
       </main>
     </div>
   )

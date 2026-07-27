@@ -336,11 +336,10 @@ export const TaskModal = ({
   const cur_stat = statuses.find(s => s.id === (task ? task.status_id : status_id))
 
   const modal_title = is_create ? "New task" : (editing ? "Edit task" : (task?.title ?? ""))
-  const modal_desc  = is_create ? "// workspace" : (editing ? "// editing" : `// ${cur_stat?.name ?? "no status"}`)
 
   return (
     <>
-      <Modal open={open} on_close={on_close} title={modal_title} description={modal_desc} size="lg">
+      <Modal open={open} on_close={on_close} title={modal_title} size="lg">
         <div className="space-y-5">
 
           {/* ── View mode header ── */}
@@ -621,7 +620,6 @@ export const StatusModal = ({
       open={open}
       on_close={on_close}
       title={is_new ? "Add status" : "Edit status"}
-      description="// kanban column"
       size="sm"
     >
       <div className="space-y-4">
@@ -707,7 +705,6 @@ export const StatusModal = ({
 
 const ViewDivider = ({ label }: { label: string }) => (
   <div className="flex items-center gap-2.5 py-1">
-    <span className="text-[10px] font-bold text-flag-red/50">//</span>
     <span className="text-[9px] font-semibold uppercase tracking-widest text-muted/50">{label}</span>
     <div className="h-px flex-1 bg-gradient-to-r from-line/60 to-transparent" />
   </div>

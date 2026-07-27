@@ -296,7 +296,6 @@ export default function WorkspacePage() {
           className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line bg-card px-4 py-3 lg:px-6 lg:py-4"
         >
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
             <h1 className="text-sm font-semibold tracking-tight text-ink">Workspace</h1>
             <span className="text-[11px] text-muted">
               {fetching ? "Loading…" : `${projects.length} project${projects.length !== 1 ? "s" : ""}`}

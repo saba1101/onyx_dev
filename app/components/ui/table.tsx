@@ -13,11 +13,12 @@ type TableProps<T> = {
   rows:          T[]
   row_key:       (row: T) => string
   on_row_click?: (row: T) => void
+  row_class?:    (row: T) => string
   empty?:        ReactNode
 }
 
 // Shared data table — striped rows, sticky-style header, optional click-through.
-export function Table<T>({ columns, rows, row_key, on_row_click, empty }: TableProps<T>) {
+export function Table<T>({ columns, rows, row_key, on_row_click, row_class, empty }: TableProps<T>) {
   if (rows.length === 0 && empty) return <>{empty}</>
 
   return (
@@ -43,7 +44,7 @@ export function Table<T>({ columns, rows, row_key, on_row_click, empty }: TableP
                 onClick={on_row_click ? () => on_row_click(row) : undefined}
                 className={`group border-b border-line/50 transition-colors last:border-0 even:bg-muted/[0.08] ${
                   on_row_click ? "cursor-pointer hover:bg-flag-red/[0.04] dark:hover:bg-flag-red/[0.06]" : ""
-                }`}
+                } ${row_class?.(row) ?? ""}`}
               >
                 {columns.map(col => (
                   <td key={col.key} className={`px-4 py-3 ${col.align === "right" ? "text-right" : ""} ${col.className ?? ""}`}>

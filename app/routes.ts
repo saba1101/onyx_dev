@@ -22,5 +22,6 @@ export default [
     route("crypto",    "features/crypto/routes/crypto.tsx"),
     route("crypto/:id","features/crypto/routes/coin.tsx"),
     route("subscriptions", "features/subscriptions/routes/subscriptions.tsx"),
+    route("clients", "features/clients/routes/clients.tsx"),
   ]),
 ] satisfies RouteConfig;

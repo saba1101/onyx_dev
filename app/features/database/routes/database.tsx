@@ -410,7 +410,7 @@ const RowEditModal = ({ state, schemas, on_close, on_saved }: {
   return (
     <Modal open={!!state} on_close={on_close}
       title={state.mode === "edit" ? "Edit row" : "Add row"}
-      description={state.table} size="md">
+      size="md">
       <div className="space-y-3 py-1">
         {schema.cols.map(col => (
           <div key={col.name}>

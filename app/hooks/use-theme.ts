@@ -36,3 +36,25 @@ export const use_theme = () => {
 
   return { choice, set, mounted }
 }
+
+// Reactive resolved dark/light boolean — watches the actual `dark` class on
+// <html> (via MutationObserver) rather than re-deriving `choice`, so it stays
+// correct whether the class changed from a user toggle or a system-preference
+// change while `choice === "system"`. For components (charts, map tiles) that
+// need to re-render on theme change rather than just relying on CSS cascade.
+export const use_is_dark = () => {
+  const [is_dark, set_is_dark] = useState(() =>
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark"),
+  )
+
+  useEffect(() => {
+    const el = document.documentElement
+    const update = () => set_is_dark(el.classList.contains("dark"))
+    update()
+    const observer = new MutationObserver(update)
+    observer.observe(el, { attributes: true, attributeFilter: ["class"] })
+    return () => observer.disconnect()
+  }, [])
+
+  return is_dark
+}

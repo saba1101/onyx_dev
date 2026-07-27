@@ -1,10 +1,12 @@
 import "leaflet/dist/leaflet.css"
 import { useEffect, useState, useCallback } from "react"
-import { Link } from "react-router"
+import { motion } from "motion/react"
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from "react-leaflet"
 import L from "leaflet"
 import { useAuth } from "~/features/auth/lib/auth"
 import { useProfile } from "~/features/profile/lib/profile-context"
+import { SideRail } from "~/components/ui/side-rail"
+import { use_is_dark } from "~/hooks/use-theme"
 import {
   fetch_locations,
   upsert_location,
@@ -12,9 +14,10 @@ import {
   fmt_ago,
   type LocationWithProfile,
 } from "../lib/locations"
-import { MapPinIcon, ChevronsLeftIcon } from "~/components/ui/icons"
+import { MapPinIcon } from "~/components/ui/icons"
 
 const REFRESH_INTERVAL = 30
+const ease_out = [0.22, 1, 0.36, 1] as const
 
 // ── Custom marker icon ───────────────────────────────────────────────────────
 
@@ -25,19 +28,19 @@ const make_icon = (profile: LocationWithProfile["profile"], is_you: boolean) => 
 
   const inner = profile.avatar_url
     ? `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`
-    : `<span style="font-size:11px;font-weight:700;color:#fff;line-height:1">${name.slice(0, 2).toUpperCase()}</span>`
+    : `<span style="font-size:11px;font-weight:700;color:var(--color-ink);line-height:1">${name.slice(0, 2).toUpperCase()}</span>`
 
   const html = `
     <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
       <div style="
         width:36px;height:36px;border-radius:50%;border:2.5px solid ${border};
-        background:#1c1c1c;display:flex;align-items:center;justify-content:center;
+        background:var(--color-card);display:flex;align-items:center;justify-content:center;
         overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.35)
       ">${inner}</div>
       <div style="
-        background:rgba(15,15,15,0.82);color:#f5f5f5;font-size:9px;font-weight:600;
+        background:var(--color-card);color:var(--color-ink);font-size:9px;font-weight:600;
         padding:1px 5px;border-radius:4px;white-space:nowrap;letter-spacing:0.3px;
-        border:1px solid rgba(255,255,255,0.08)
+        border:1px solid var(--color-line)
       ">${name}${is_you ? " · you" : ""}</div>
       <div style="
         width:0;height:0;border-left:5px solid transparent;
@@ -153,6 +156,7 @@ const PeopleList = ({
 export default function LocationsPage() {
   const { user }    = useAuth()
   const { profile } = useProfile()
+  const is_dark      = use_is_dark()
 
   const [locations, set_locations] = useState<LocationWithProfile[]>([])
   const [loading, set_loading]     = useState(true)
@@ -227,94 +231,77 @@ export default function LocationsPage() {
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden">
+    <div className="flex h-full overflow-hidden">
+      <SideRail />
 
-      {/* ── Header ── */}
-      <div className="shrink-0 border-b border-line bg-card px-4 py-2.5 lg:px-5 lg:py-3">
-        {/* Row 1: back + title */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <Link
-              to="/"
-              className="grid h-7 w-7 shrink-0 cursor-pointer place-items-center rounded-lg border border-line text-muted transition-colors hover:bg-line/50 hover:text-ink"
-              title="Back to app"
-            >
-              <ChevronsLeftIcon size={15} />
-            </Link>
-            <span className="h-4 w-px shrink-0 bg-line" />
-            <MapPinIcon size={14} className="shrink-0 text-flag-red" />
-            <h1 className="truncate text-sm font-semibold text-ink">Live Locations</h1>
-            <span className="shrink-0 rounded-md border border-line bg-line/20 px-1.5 py-0.5 text-[10px] text-muted">
-              {locations.length} sharing
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden pt-14 lg:pt-0">
+
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: ease_out }}
+          className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line bg-card px-4 py-3 lg:px-6 lg:py-4"
+        >
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-flag-red/10 text-flag-red">
+              <MapPinIcon size={16} />
             </span>
+            <div>
+              <h1 className="text-sm font-bold text-ink">Locations</h1>
+              <p className="text-[10px] text-muted">
+                {loading ? "Loading…" : `${locations.length} sharing`}
+              </p>
+            </div>
           </div>
 
-          {/* Countdown — desktop only in row 1 */}
-          <div className="hidden items-center gap-1.5 text-[10px] text-muted lg:flex">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-flag-red opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-flag-red" />
-            </span>
-            {countdown}s
-          </div>
-        </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="hidden items-center gap-1.5 text-[10px] text-muted sm:flex">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-flag-red opacity-60" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-flag-red" />
+              </span>
+              {countdown}s
+            </div>
 
-        {/* Row 2: actions */}
-        <div className="mt-2 flex items-center gap-2">
-          {/* Countdown — mobile */}
-          <div className="flex items-center gap-1.5 text-[10px] text-muted lg:hidden">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-flag-red opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-flag-red" />
-            </span>
-            {countdown}s
-          </div>
-
-          <div className="flex-1" />
-
-          <button
-            type="button"
-            onClick={load}
-            className="rounded-lg border border-line bg-card px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:border-flag-red/30 hover:text-ink"
-          >
-            <span className="hidden sm:inline">Refresh now</span>
-            <svg className="sm:hidden" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 4v6h-6" /><path d="M1 20v-6h6" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-          </button>
-
-          {my_location ? (
             <button
               type="button"
-              onClick={handle_stop}
-              disabled={stopping}
-              className="rounded-lg border border-flag-red/30 bg-flag-red/8 px-3 py-1.5 text-xs font-medium text-flag-red transition-opacity hover:opacity-75 disabled:opacity-40"
+              onClick={load}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-ink"
             >
-              {stopping ? "Stopping…" : "Stop sharing"}
+              Refresh
             </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handle_share}
-              disabled={sharing}
-              className="rounded-lg bg-flag-red px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-80 disabled:opacity-40"
-            >
-              {sharing ? "Getting location…" : "Share my location"}
-            </button>
-          )}
-        </div>
-      </div>
 
-      {/* Error banner */}
-      {error_msg && (
-        <div className="shrink-0 border-b border-flag-red/20 bg-flag-red/8 px-4 py-2 text-xs text-flag-red">
-          {error_msg}
-        </div>
-      )}
+            {my_location ? (
+              <button
+                type="button"
+                onClick={handle_stop}
+                disabled={stopping}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-flag-red/30 bg-flag-red/8 px-3 py-1.5 text-xs font-medium text-flag-red transition-opacity hover:opacity-75 disabled:opacity-40"
+              >
+                {stopping ? "Stopping…" : "Stop sharing"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handle_share}
+                disabled={sharing}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-flag-red px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-80 disabled:opacity-40"
+              >
+                {sharing ? "Getting location…" : "Share my location"}
+              </button>
+            )}
+          </div>
+        </motion.div>
 
-      {/* ── Map + desktop sidebar ── */}
-      <div className="relative flex flex-1 overflow-hidden">
+        {/* Error banner */}
+        {error_msg && (
+          <div className="shrink-0 border-b border-flag-red/20 bg-flag-red/8 px-4 py-2 text-xs text-flag-red">
+            {error_msg}
+          </div>
+        )}
+
+        {/* ── Map + desktop sidebar ── */}
+        <div className="relative flex flex-1 overflow-hidden">
 
         {/* Desktop sidebar */}
         <aside className="hidden w-64 shrink-0 flex-col gap-1 overflow-y-auto border-r border-line bg-card p-3 lg:flex">
@@ -330,8 +317,11 @@ export default function LocationsPage() {
           />
         </aside>
 
-        {/* Map */}
-        <div className="relative flex-1">
+        {/* Map — `isolate` contains Leaflet's internal z-index (its panes/controls
+            go up to 1000, and .leaflet-container never gets its own stacking
+            context) so those values can't leak out and float the map above the
+            SideRail's fixed mobile menu (z-30/40/50) or anything else on the page. */}
+        <div className="relative isolate flex-1">
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/60 backdrop-blur-sm">
               <span className="text-xs text-muted">Loading map…</span>
@@ -348,14 +338,14 @@ export default function LocationsPage() {
 
           <style>{`
             .loc-popup .leaflet-popup-content-wrapper {
-              background: #141414;
-              border: 1px solid rgba(255,255,255,0.08);
+              background: var(--color-card);
+              border: 1px solid var(--color-line);
               border-radius: 12px;
-              box-shadow: 0 6px 24px rgba(0,0,0,0.55);
+              box-shadow: 0 6px 24px rgba(0,0,0,0.35);
               padding: 0;
             }
             .loc-popup .leaflet-popup-content { margin: 0; }
-            .loc-popup .leaflet-popup-tip { background: #141414; }
+            .loc-popup .leaflet-popup-tip { background: var(--color-card); }
           `}</style>
 
           <MapContainer
@@ -366,7 +356,7 @@ export default function LocationsPage() {
           >
             <TileLayer
               attribution='&copy; <a href="https://carto.com">CARTO</a>'
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              url={`https://{s}.basemaps.cartocdn.com/${is_dark ? "dark_all" : "light_all"}/{z}/{x}/{y}{r}.png`}
             />
             <ZoomControl position="bottomright" />
             <FlyTo center={fly_to} />
@@ -383,12 +373,12 @@ export default function LocationsPage() {
                       {loc.profile.avatar_url ? (
                         <img src={loc.profile.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
                       ) : (
-                        <div style={{ background: "#2a2a2a", color: "#f5f5f5" }} className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold">
+                        <div style={{ background: "var(--color-line)", color: "var(--color-ink)" }} className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold">
                           {(loc.profile.full_name || loc.profile.username || "?").slice(0, 2).toUpperCase()}
                         </div>
                       )}
                       <div>
-                        <p style={{ color: "#f5f5f5" }} className="text-xs font-semibold">
+                        <p style={{ color: "var(--color-ink)" }} className="text-xs font-semibold">
                           {loc.profile.full_name || loc.profile.username || "Unknown"}
                           {loc.user_id === user?.id && <span style={{ color: "#dc2626" }} className="ml-1">(you)</span>}
                         </p>
@@ -397,8 +387,8 @@ export default function LocationsPage() {
                         </div>
                       </div>
                     </div>
-                    <p style={{ color: "#888", marginTop: 8 }} className="text-[10px]">Shared {fmt_ago(loc.shared_at)}</p>
-                    <p style={{ color: "#555" }} className="mt-0.5 text-[10px]">
+                    <p style={{ color: "var(--color-muted)", marginTop: 8 }} className="text-[10px]">Shared {fmt_ago(loc.shared_at)}</p>
+                    <p style={{ color: "var(--color-muted)", opacity: 0.7 }} className="mt-0.5 text-[10px]">
                       {loc.latitude.toFixed(4)}, {loc.longitude.toFixed(4)}
                     </p>
                   </div>
@@ -466,6 +456,7 @@ export default function LocationsPage() {
         </div>
       </div>
 
+      </main>
     </div>
   )
 }

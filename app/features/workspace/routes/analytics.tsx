@@ -55,7 +55,7 @@ const Stat = ({
     transition={{ duration: 0.3, ease }}
     className="surface flex flex-col justify-between gap-3 rounded-2xl p-4"
   >
-    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted/60">// {label}</p>
+    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted/60">{label}</p>
     <div className="flex items-end justify-between gap-2">
       <div>
         <p className={`text-3xl font-bold leading-none ${accent ? "text-flag-red" : "text-ink"}`}>{value}</p>
@@ -96,7 +96,6 @@ const Panel = ({ title, children, className = "" }: { title: string; children: R
     className={`surface rounded-2xl p-4 ${className}`}
   >
     <div className="mb-4 flex items-center gap-2">
-      <span className="text-[10px] font-bold text-flag-red/50">//</span>
       <p className="text-[10px] font-semibold uppercase tracking-widest text-muted/60">{title}</p>
       <div className="h-px flex-1 bg-gradient-to-r from-line/60 to-transparent" />
     </div>

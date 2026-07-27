@@ -16,6 +16,7 @@ import {
   SearchIcon,
   MapPinIcon,
   WalletIcon,
+  BriefcaseIcon,
 } from "~/components/ui/icons";
 import { usePermissionsStore } from "~/features/permissions/lib/permissions-store";
 import { use_fullscreen } from "~/hooks/use-fullscreen";
@@ -113,6 +114,7 @@ const PAGE_PATH_TO_KEY: Record<string, string> = {
   "/planning":  "planning",
   "/crypto":    "crypto",
   "/subscriptions": "subscriptions",
+  "/clients":   "clients",
   "/settings":  "settings",
 };
 
@@ -151,6 +153,7 @@ export const SideRail = () => {
     { to: "/planning",  label: "Flow Map",               icon: NetworkIcon  },
     { to: "/crypto",    label: "Crypto",                 icon: CryptoIcon   },
     { to: "/subscriptions", label: "Subscriptions",      icon: WalletIcon   },
+    { to: "/clients",   label: "Clients",                icon: BriefcaseIcon },
     { to: "/settings",  label: "Settings",               icon: GearIcon     },
   ];
 

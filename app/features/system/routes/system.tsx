@@ -340,7 +340,6 @@ const System = () => {
           {/* Title row */}
           <div className="flex items-center justify-between gap-4 px-4 py-3 lg:px-6 lg:py-4">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
               <h1 className="text-sm font-semibold tracking-tight text-ink">System</h1>
               <span className="hidden text-[11px] text-muted sm:block">Supabase infrastructure</span>
             </div>

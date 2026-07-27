@@ -1160,7 +1160,6 @@ const Git = () => {
           className="flex items-center justify-between gap-4 lg:absolute lg:inset-x-8 lg:top-2 lg:z-10"
         >
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-flag-red">//</span>
             <h1 className="text-sm font-semibold tracking-tight text-ink">GitHub</h1>
             {state.phase === "ready" && (
               <span className="text-[11px] text-muted">@{state.data.gh_user.login}</span>

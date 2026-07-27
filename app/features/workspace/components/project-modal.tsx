@@ -92,7 +92,6 @@ export const ProjectModal = ({ open, editing, owner_id, on_close, on_saved, on_d
       open={open}
       on_close={on_close}
       title={is_new ? "New project" : "Edit project"}
-      description="// workspace"
       size="sm"
     >
       <div className="space-y-4">
