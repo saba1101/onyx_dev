@@ -150,6 +150,17 @@ const GripDots = () => (
   </span>
 )
 
+const DragHandleIcon = () => (
+  <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" className="shrink-0 cursor-grab text-muted/50 transition-colors group-hover:text-muted active:cursor-grabbing">
+    <circle cx="2.5" cy="2.5"  r="1.5" />
+    <circle cx="7.5" cy="2.5"  r="1.5" />
+    <circle cx="2.5" cy="7"    r="1.5" />
+    <circle cx="7.5" cy="7"    r="1.5" />
+    <circle cx="2.5" cy="11.5" r="1.5" />
+    <circle cx="7.5" cy="11.5" r="1.5" />
+  </svg>
+)
+
 // ── Column ────────────────────────────────────────────────────────────────────
 
 const Column = ({
@@ -247,7 +258,7 @@ const Column = ({
 // ── Columns manager panel ─────────────────────────────────────────────────────
 
 const ColumnsPanel = ({
-  open, statuses, on_close, on_edit_status, on_add_status, on_delete_status,
+  open, statuses, on_close, on_edit_status, on_add_status, on_delete_status, on_reorder,
 }: {
   open:              boolean
   statuses:          WStatus[]
@@ -255,9 +266,12 @@ const ColumnsPanel = ({
   on_edit_status:    (s: WStatus) => void
   on_add_status:     () => void
   on_delete_status:  (s: WStatus) => void
+  on_reorder:        (ordered: WStatus[]) => void
 }) => {
   const [confirming, set_confirming] = useState<string | null>(null)
   const [deleting,   set_deleting]   = useState<string | null>(null)
+  const [drag_id,      set_drag_id]      = useState<string | null>(null)
+  const [drag_over_id, set_drag_over_id] = useState<string | null>(null)
   const notify = use_notify()
 
   const handle_delete = async (s: WStatus) => {
@@ -267,6 +281,35 @@ const ColumnsPanel = ({
     else on_delete_status(s)
     set_deleting(null)
     set_confirming(null)
+  }
+
+  const on_row_drag_start = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.effectAllowed = "move"
+    set_drag_id(id)
+  }
+
+  const on_row_drag_over = (e: React.DragEvent, id: string) => {
+    e.preventDefault()
+    if (id !== drag_id) set_drag_over_id(id)
+  }
+
+  const on_row_drop = (e: React.DragEvent, id: string) => {
+    e.preventDefault()
+    set_drag_over_id(null)
+    if (!drag_id || drag_id === id) { set_drag_id(null); return }
+    const from = statuses.findIndex(s => s.id === drag_id)
+    const to   = statuses.findIndex(s => s.id === id)
+    set_drag_id(null)
+    if (from === -1 || to === -1) return
+    const next = [...statuses]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    on_reorder(next)
+  }
+
+  const on_row_drag_end = () => {
+    set_drag_id(null)
+    set_drag_over_id(null)
   }
 
   return (
@@ -315,8 +358,18 @@ const ColumnsPanel = ({
                 return (
                   <div
                     key={s.id}
-                    className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors hover:bg-line/30"
+                    draggable
+                    onDragStart={e => on_row_drag_start(e, s.id)}
+                    onDragOver={e => on_row_drag_over(e, s.id)}
+                    onDrop={e => on_row_drop(e, s.id)}
+                    onDragEnd={on_row_drag_end}
+                    className={`group flex items-center gap-2 rounded-lg px-2.5 py-2 transition-colors
+                      ${drag_over_id === s.id
+                        ? "bg-flag-red/10 ring-1 ring-flag-red/30"
+                        : "hover:bg-line/30"}
+                      ${drag_id === s.id ? "opacity-40" : ""}`}
                   >
+                    <DragHandleIcon />
                     <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${c.dot}`} />
                     <span className="flex-1 text-sm text-ink truncate">{s.name}</span>
 
@@ -593,6 +646,16 @@ export default function BoardPage() {
     set_tasks(prev => prev.map(t => t.status_id === id ? { ...t, status_id: null } : t))
   }
 
+  const on_statuses_reordered = async (ordered: WStatus[]) => {
+    const prev = statuses
+    set_statuses(ordered)
+    const results = await api.statuses.reorder(ordered.map((s, i) => ({ id: s.id, position: i })))
+    if (results.some(r => r.error)) {
+      notify({ tone: "error", title: "Failed to save column order" })
+      set_statuses(prev)
+    }
+  }
+
   const open_add_status = () => {
     set_editing_status(null)
   }
@@ -808,6 +871,7 @@ export default function BoardPage() {
         on_edit_status={open_edit_status}
         on_add_status={open_add_status}
         on_delete_status={s => on_status_deleted(s.id)}
+        on_reorder={on_statuses_reordered}
       />
 
       {/* Task modal */}

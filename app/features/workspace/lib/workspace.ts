@@ -110,6 +110,10 @@ export const api = {
       supabase.from("workspace_statuses").update(patch).eq("id", id),
     remove: (id: string) =>
       supabase.from("workspace_statuses").delete().eq("id", id),
+    reorder: (updates: { id: string; position: number }[]) =>
+      Promise.all(updates.map(({ id, position }) =>
+        supabase.from("workspace_statuses").update({ position }).eq("id", id)
+      )),
   },
 
   tasks: {
