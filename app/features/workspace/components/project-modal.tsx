@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react"
 import { Modal } from "~/components/ui/modal"
+import { Dropdown } from "~/components/ui/dropdown"
 import { use_notify } from "~/hooks/use-notify"
-import { CheckIcon, TrashIcon, LockIcon, GlobeIcon } from "~/components/ui/icons"
+import { CheckIcon, TrashIcon, LockIcon, GlobeIcon, BriefcaseIcon, ChevronIcon } from "~/components/ui/icons"
 import {
   api, STATUS_COLORS, COLOR_OPTIONS,
   type WProject, type StatusColor, type ProjectVisibility,
 } from "~/features/workspace/lib/workspace"
+import { api as clients_api, type Client } from "~/features/clients/lib/clients"
 
 // Seeded onto every new project so a board is immediately usable instead of
 // starting empty — the same three-stage flow ("To Do" / "In Progress" /
@@ -35,6 +37,8 @@ export const ProjectModal = ({ open, editing, owner_id, on_close, on_saved, on_d
   const [description, set_description] = useState("")
   const [color,       set_color]       = useState<StatusColor>("red")
   const [visibility,  set_visibility]  = useState<ProjectVisibility>("private")
+  const [client_id,   set_client_id]   = useState<string | null>(null)
+  const [clients,     set_clients]     = useState<Client[]>([])
   const [saving,      set_saving]      = useState(false)
   const [deleting,    set_deleting]    = useState(false)
   const [confirm,     set_confirm]     = useState(false)
@@ -45,6 +49,8 @@ export const ProjectModal = ({ open, editing, owner_id, on_close, on_saved, on_d
     set_description(editing?.description ?? "")
     set_color(editing?.color ?? "red")
     set_visibility(editing?.visibility ?? "private")
+    set_client_id(editing?.client_id ?? null)
+    clients_api.list().then(({ data }) => set_clients((data as Client[]) ?? []))
   }, [open, editing?.id])
 
   const save = async () => {
@@ -53,7 +59,7 @@ export const ProjectModal = ({ open, editing, owner_id, on_close, on_saved, on_d
     if (is_new) {
       const { data, error } = await api.projects.create({
         name: name.trim(), description: description.trim() || null,
-        color, visibility, owner_id,
+        color, visibility, owner_id, client_id,
       })
       if (error) {
         notify({ tone: "error", title: "Failed to create project", message: error.message })
@@ -70,7 +76,7 @@ export const ProjectModal = ({ open, editing, owner_id, on_close, on_saved, on_d
       }
     } else {
       const { data, error } = await api.projects.update(editing!.id, {
-        name: name.trim(), description: description.trim() || null, color, visibility,
+        name: name.trim(), description: description.trim() || null, color, visibility, client_id,
       })
       if (error) notify({ tone: "error", title: "Failed to save", message: error.message })
       else { on_saved(data as WProject); on_close() }
@@ -157,6 +163,31 @@ export const ProjectModal = ({ open, editing, owner_id, on_close, on_saved, on_d
           <p className="text-[11px] text-muted/70">
             {visibility === "private" ? "Only you (and root) can see this project." : "Any signed-in teammate can view and use this project."}
           </p>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium uppercase tracking-wide text-muted">Link to client</label>
+          <Dropdown
+            value={client_id ?? ""}
+            options={[
+              { value: "", label: "No client" },
+              ...clients.map(c => ({ value: c.id, label: c.company_name })),
+            ]}
+            on_select={v => set_client_id(v || null)}
+            menu_width="w-56"
+            trigger_class="flex w-full cursor-pointer items-center gap-2 rounded-lg border border-line bg-page/60 px-3 py-2 text-sm text-ink outline-none transition-colors hover:border-flag-red/40"
+          >
+            {({ open }) => (
+              <>
+                <BriefcaseIcon size={13} className="shrink-0 text-muted" />
+                <span className="flex-1 truncate text-left">
+                  {client_id ? clients.find(c => c.id === client_id)?.company_name ?? "…" : "No client"}
+                </span>
+                <ChevronIcon size={12} className={`shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
+              </>
+            )}
+          </Dropdown>
+          <p className="text-[11px] text-muted/70">Ties this project to a client's outreach record on the Clients page.</p>
         </div>
 
         <div className="flex items-center gap-2 pt-1">

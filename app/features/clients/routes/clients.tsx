@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { motion } from "motion/react"
+import { useNavigate } from "react-router"
 import { useAuth } from "~/features/auth/lib/auth"
 import { SideRail } from "~/components/ui/side-rail"
 import { use_notify } from "~/hooks/use-notify"
@@ -11,13 +12,14 @@ import { ConfirmPopover } from "~/components/ui/confirm-popover"
 import { supabase } from "~/lib/supabase"
 import { ClientModal } from "~/features/clients/components/client-modal"
 import {
-  PlusIcon, PencilIcon, TrashIcon, BriefcaseIcon, ChevronIcon,
+  PlusIcon, PencilIcon, TrashIcon, BriefcaseIcon, ChevronIcon, LinkIcon, XIcon, ExternalLinkIcon,
   MailIcon, PhoneIcon, GlobeIcon, MapPinIcon, AtSignIcon, ClockIcon, CalendarIcon, TrendingUpIcon,
 } from "~/components/ui/icons"
 import {
   api, STATUS_ORDER, STATUS_META, fmt_money, fmt_date, fmt_last_contact, is_stale, is_follow_up_due,
   type Client, type ClientStatus,
 } from "~/features/clients/lib/clients"
+import { api as workspace_api, type WProject } from "~/features/workspace/lib/workspace"
 
 type SortKey = "company" | "status" | "amount" | "last_contact" | null
 
@@ -57,27 +59,40 @@ const build_client_columns = (opts: {
   on_edit:           (c: Client) => void
   deleting_id:       string | null
   on_confirm_delete: (id: string) => void
+  projects:          WProject[]
+  on_open_project:   (project_id: string) => void
 }): TableColumn<Client>[] => {
-  const { sort_key, sort_dir, on_sort, on_status_change, on_edit, deleting_id, on_confirm_delete } = opts
+  const { sort_key, sort_dir, on_sort, on_status_change, on_edit, deleting_id, on_confirm_delete, projects, on_open_project } = opts
   const sort_header = (key: SortKey, label: string) => (
     <SortHeader label={label} active={sort_key === key} dir={sort_dir} on_click={() => on_sort(key)} />
   )
+  const linked_projects = (c: Client) => projects.filter(p => p.client_id === c.id)
 
   return [
     {
       key: "company",
       header: sort_header("company", "Company"),
-      cell: c => (
-        <div className="flex items-center gap-3">
-          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold ${STATUS_META[c.status].badge}`}>
-            {initials(c.company_name)}
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-ink">{c.company_name}</p>
-            <p className="truncate text-[10px] text-muted">{c.contact_name || "No contact name"}</p>
+      cell: c => {
+        const linked = linked_projects(c)
+        return (
+          <div className="flex items-center gap-3">
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold ${STATUS_META[c.status].badge}`}>
+              {initials(c.company_name)}
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="truncate text-sm font-medium text-ink">{c.company_name}</p>
+                {linked.length > 0 && (
+                  <span title={`Linked to ${linked.map(p => p.name).join(", ")}`} className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-flag-red/10 text-flag-red">
+                    <LinkIcon size={9} />
+                  </span>
+                )}
+              </div>
+              <p className="truncate text-[10px] text-muted">{c.contact_name || "No contact name"}</p>
+            </div>
           </div>
-        </div>
-      ),
+        )
+      },
     },
     {
       key: "status",
@@ -136,6 +151,32 @@ const build_client_columns = (opts: {
       header: "Service",
       className: "hidden text-xs text-muted xl:table-cell",
       cell: c => c.service_offered || <span className="text-muted/40">—</span>,
+    },
+    {
+      key: "project",
+      header: "Project",
+      className: "hidden xl:table-cell",
+      cell: c => {
+        const linked = linked_projects(c)
+        if (linked.length === 0) return <span className="text-xs text-muted/40">—</span>
+        return (
+          <div className="flex flex-wrap items-center gap-1">
+            {linked.slice(0, 2).map(p => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={e => { e.stopPropagation(); on_open_project(p.id) }}
+                title="Open in workspace"
+                className="inline-flex max-w-[120px] cursor-pointer items-center gap-1 rounded-full bg-flag-red/10 px-2 py-0.5 text-[10px] font-medium text-flag-red transition-opacity hover:opacity-75"
+              >
+                <BriefcaseIcon size={9} className="shrink-0" />
+                <span className="truncate">{p.name}</span>
+              </button>
+            ))}
+            {linked.length > 2 && <span className="text-[10px] text-muted">+{linked.length - 2}</span>}
+          </div>
+        )
+      },
     },
     {
       key: "amount",
@@ -252,20 +293,26 @@ const VitalCard = ({
 )
 
 const DetailModal = ({
-  client, on_close, on_edit, on_status_change,
+  client, projects, on_close, on_edit, on_status_change, on_link_project, on_unlink_project, on_open_project,
 }: {
   client:            Client | null
+  projects:          WProject[]
   on_close:          () => void
   on_edit:           () => void
   on_status_change:  (id: string, status: ClientStatus) => void
+  on_link_project:   (project_id: string) => void
+  on_unlink_project: (project_id: string) => void
+  on_open_project:   (project_id: string) => void
 }) => {
   if (!client) return null
   const meta = STATUS_META[client.status]
   const stale = is_stale(client)
   const follow_up_due = is_follow_up_due(client)
+  const linked = projects.filter(p => p.client_id === client.id)
+  const linkable = projects.filter(p => p.client_id !== client.id)
 
   return (
-    <Modal open={!!client} on_close={on_close} title={client.company_name} size="2xl">
+    <Modal open={!!client} on_close={on_close} size="2xl">
       {/* Hero */}
       <div className={`mb-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border p-4 ${meta.wash}`}>
         <div className="flex items-center gap-3.5">
@@ -337,6 +384,54 @@ const DetailModal = ({
           <InfoRow icon={<GlobeIcon size={13} />} label="Website" value={client.website} href={client.website ? norm_url(client.website) : undefined} />
           <InfoRow icon={<AtSignIcon size={13} />} label="Social" value={client.social_url} href={client.social_url ? norm_url(client.social_url) : undefined} />
           <InfoRow icon={<MapPinIcon size={13} />} label="Maps" value={client.maps_url} href={client.maps_url ? norm_url(client.maps_url) : undefined} sub={client.address} />
+
+          <div className="pt-2">
+            <SectionLabel>Linked projects</SectionLabel>
+            <div className="space-y-1.5">
+              {linked.length === 0 && (
+                <p className="rounded-lg border border-line/40 bg-page/40 px-3 py-2 text-[11px] text-muted/60">No project linked yet.</p>
+              )}
+              {linked.map(p => (
+                <div key={p.id} className="flex items-center gap-2 rounded-lg border border-line/40 bg-page/40 px-3 py-2">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-line/30 text-muted"><BriefcaseIcon size={12} /></span>
+                  <button
+                    type="button"
+                    onClick={() => on_open_project(p.id)}
+                    className="min-w-0 flex-1 truncate text-left text-xs text-ink transition-colors hover:text-flag-red hover:underline"
+                    title="Open in workspace"
+                  >
+                    {p.name}
+                  </button>
+                  <ExternalLinkIcon size={11} className="shrink-0 text-muted/50" />
+                  <button
+                    type="button"
+                    onClick={() => on_unlink_project(p.id)}
+                    title="Unlink project"
+                    className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-md text-muted transition-colors hover:bg-loss/10 hover:text-loss"
+                  >
+                    <XIcon size={11} />
+                  </button>
+                </div>
+              ))}
+
+              {linkable.length > 0 && (
+                <Dropdown
+                  value=""
+                  options={linkable.map(p => ({ value: p.id, label: p.name }))}
+                  on_select={on_link_project}
+                  menu_width="w-56"
+                  trigger_class="flex w-full cursor-pointer items-center gap-2 rounded-lg border border-dashed border-line px-3 py-2 text-xs text-muted transition-colors hover:border-flag-red/40 hover:text-ink"
+                >
+                  {() => (
+                    <>
+                      <LinkIcon size={12} />
+                      Link to project
+                    </>
+                  )}
+                </Dropdown>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="lg:col-span-2">
@@ -405,8 +500,10 @@ const PipelineBar = ({ clients }: { clients: Client[] }) => {
 export default function ClientsPage() {
   const { user } = useAuth()
   const notify = use_notify()
+  const navigate = useNavigate()
 
   const [clients,  set_clients]  = useState<Client[]>([])
+  const [projects, set_projects] = useState<WProject[]>([])
   const [fetching, set_fetching] = useState(true)
 
   const [search,   set_search]   = useState("")
@@ -420,9 +517,10 @@ export default function ClientsPage() {
   const [editing,    set_editing]    = useState<Client | null>(null)
 
   const load = async () => {
-    const { data, error } = await api.list()
+    const [{ data, error }, { data: proj_data }] = await Promise.all([api.list(), workspace_api.projects.list()])
     if (error) notify({ tone: "error", title: "Failed to load clients", message: error.message })
     set_clients((data as Client[]) ?? [])
+    set_projects((proj_data as WProject[]) ?? [])
     set_fetching(false)
   }
 
@@ -512,6 +610,17 @@ export default function ClientsPage() {
     const { error } = await api.update(id, { status })
     if (error) { notify({ tone: "error", title: "Failed to update status", message: error.message }); set_clients(prev) }
   }
+
+  const set_project_client = async (project_id: string, client_id: string | null) => {
+    const prev = projects
+    set_projects(ps => ps.map(p => p.id === project_id ? { ...p, client_id } : p))
+    const { error } = await workspace_api.projects.update(project_id, { client_id })
+    if (error) { notify({ tone: "error", title: "Failed to update link", message: error.message }); set_projects(prev) }
+  }
+
+  const on_link_project   = (project_id: string) => selected && set_project_client(project_id, selected.id)
+  const on_unlink_project = (project_id: string) => set_project_client(project_id, null)
+  const on_open_project   = (project_id: string) => navigate(`/workspace/${project_id}`)
 
   if (!user) return null
 
@@ -637,6 +746,7 @@ export default function ClientsPage() {
                 sort_key, sort_dir, on_sort,
                 on_status_change,
                 on_edit: open_edit, deleting_id, on_confirm_delete: delete_row,
+                projects, on_open_project,
               })}
               rows={sorted}
               row_key={c => c.id}
@@ -649,9 +759,13 @@ export default function ClientsPage() {
 
       <DetailModal
         client={selected}
+        projects={projects}
         on_close={() => set_selected_id(null)}
         on_edit={() => selected && open_edit(selected)}
         on_status_change={on_status_change}
+        on_link_project={on_link_project}
+        on_unlink_project={on_unlink_project}
+        on_open_project={on_open_project}
       />
 
       <ClientModal

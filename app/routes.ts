@@ -4,6 +4,8 @@ export default [
   layout("features/auth/routes/layout.tsx", [
     route("login",  "features/auth/routes/login.tsx"),
     route("signup", "features/auth/routes/signup.tsx"),
+    route("forgot-password", "features/auth/routes/forgot-password.tsx"),
+    route("reset-password",  "features/auth/routes/reset-password.tsx"),
   ]),
   route("logout",  "features/auth/routes/logout.tsx"),
   route("profile", "features/profile/routes/profile.tsx"),

@@ -1,34 +1,42 @@
-import { useEffect, type ReactNode } from "react"
-import { motion, AnimatePresence } from "motion/react"
-import { XIcon } from "~/components/ui/icons"
+import { useEffect, type ReactNode } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { XIcon } from "~/components/ui/icons";
 
 const sizes = {
-  sm:  "max-w-sm",
-  md:  "max-w-lg",
-  lg:  "max-w-2xl",
-  xl:  "max-w-4xl",
+  sm: "max-w-sm",
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+  xl: "max-w-4xl",
   "2xl": "max-w-6xl",
-}
+};
 
 type ModalProps = {
-  open: boolean
-  on_close: () => void
-  title: string
-  size?: keyof typeof sizes
-  children: ReactNode
-}
+  open: boolean;
+  on_close: () => void;
+  title?: string;
+  size?: keyof typeof sizes;
+  children: ReactNode;
+};
 
-export const Modal = ({ open, on_close, title, size = "md", children }: ModalProps) => {
+export const Modal = ({
+  open,
+  on_close,
+  title,
+  size = "md",
+  children,
+}: ModalProps) => {
   useEffect(() => {
-    if (!open) return
-    const on_key = (e: KeyboardEvent) => { if (e.key === "Escape") on_close() }
-    document.addEventListener("keydown", on_key)
-    document.body.style.overflow = "hidden"
+    if (!open) return;
+    const on_key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") on_close();
+    };
+    document.addEventListener("keydown", on_key);
+    document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener("keydown", on_key)
-      document.body.style.overflow = ""
-    }
-  }, [open, on_close])
+      document.removeEventListener("keydown", on_key);
+      document.body.style.overflow = "";
+    };
+  }, [open, on_close]);
 
   return (
     <AnimatePresence>
@@ -48,7 +56,7 @@ export const Modal = ({ open, on_close, title, size = "md", children }: ModalPro
           <motion.div
             role="dialog"
             aria-modal="true"
-            aria-labelledby="modal-title"
+            aria-labelledby={title ? "modal-title" : undefined}
             initial={{ opacity: 0, scale: 0.97, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 10 }}
@@ -61,15 +69,22 @@ export const Modal = ({ open, on_close, title, size = "md", children }: ModalPro
             className={`surface bg-card relative z-10 w-full ${sizes[size]} max-h-[90vh] overflow-hidden rounded-2xl flex flex-col`}
           >
             {/* Accent stripe */}
-            <div className="h-px shrink-0 bg-gradient-to-r from-transparent via-flag-red to-transparent opacity-75" />
+            <div className="h-px shrink-0 bg-linear-to-r from-transparent via-flag-red to-transparent opacity-75" />
 
             {/* Header */}
-            <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-4 pt-5">
-              <div>
-                <h2 id="modal-title" className="text-base font-semibold tracking-tight">
-                  {title}
-                </h2>
-              </div>
+            <div
+              className={`flex shrink-0 items-start gap-4 px-6 pb-4 pt-5 ${title ? "justify-between" : "justify-end"}`}
+            >
+              {title && (
+                <div>
+                  <h2
+                    id="modal-title"
+                    className="text-base font-semibold tracking-tight"
+                  >
+                    {title}
+                  </h2>
+                </div>
+              )}
               <button
                 onClick={on_close}
                 aria-label="Close"
@@ -87,5 +102,5 @@ export const Modal = ({ open, on_close, title, size = "md", children }: ModalPro
         </div>
       )}
     </AnimatePresence>
-  )
-}
+  );
+};

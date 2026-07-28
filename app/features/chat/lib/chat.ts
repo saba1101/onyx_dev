@@ -1,45 +1,45 @@
-import { supabase } from "~/lib/supabase"
-import type { RealtimeChannel } from "@supabase/supabase-js"
+import { supabase } from "~/lib/supabase";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 // Mirrors the `char_length(body) between 1 and 2000` check constraint on
 // public.messages — enforced client-side so the composer can't produce a
 // message the DB will just reject.
-export const MAX_MESSAGE_LEN = 2000
+export const MAX_MESSAGE_LEN = 2000;
 
 export type Message = {
-  id:           string
-  sender_id:    string
-  recipient_id: string
-  body:         string
-  created_at:   string
-  read_at:      string | null
-}
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+};
 
 export type Conversation = {
-  counterpart_id: string
-  full_name:      string | null
-  username:       string | null
-  avatar_url:     string | null
-  last_body:      string
-  last_at:        string
-  last_sender_id: string
-  unread_count:   number
-}
+  counterpart_id: string;
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  last_body: string;
+  last_at: string;
+  last_sender_id: string;
+  unread_count: number;
+};
 
 export const fmt_time = (iso: string) => {
-  const d = new Date(iso)
-  const same_day = d.toDateString() === new Date().toDateString()
+  const d = new Date(iso);
+  const same_day = d.toDateString() === new Date().toDateString();
   return same_day
     ? d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
-    : d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
-}
+    : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
 
 export const api = {
   conversations: {
     list: async (): Promise<Conversation[]> => {
-      const { data, error } = await supabase.rpc("chat_conversations")
-      if (error) throw error
-      return (data ?? []) as Conversation[]
+      const { data, error } = await supabase.rpc("chat_conversations");
+      if (error) throw error;
+      return (data ?? []) as Conversation[];
     },
   },
 
@@ -48,20 +48,26 @@ export const api = {
       const { data, error } = await supabase
         .from("messages")
         .select("*")
-        .or(`and(sender_id.eq.${me},recipient_id.eq.${other_id}),and(sender_id.eq.${other_id},recipient_id.eq.${me})`)
-        .order("created_at", { ascending: true })
-      if (error) throw error
-      return (data ?? []) as Message[]
+        .or(
+          `and(sender_id.eq.${me},recipient_id.eq.${other_id}),and(sender_id.eq.${other_id},recipient_id.eq.${me})`,
+        )
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Message[];
     },
 
-    send: async (recipient_id: string, sender_id: string, body: string): Promise<Message> => {
+    send: async (
+      recipient_id: string,
+      sender_id: string,
+      body: string,
+    ): Promise<Message> => {
       const { data, error } = await supabase
         .from("messages")
         .insert({ sender_id, recipient_id, body })
         .select()
-        .single()
-      if (error) throw error
-      return data as Message
+        .single();
+      if (error) throw error;
+      return data as Message;
     },
 
     mark_read: async (other_id: string, me: string) => {
@@ -70,7 +76,7 @@ export const api = {
         .update({ read_at: new Date().toISOString() })
         .eq("recipient_id", me)
         .eq("sender_id", other_id)
-        .is("read_at", null)
+        .is("read_at", null);
     },
   },
 
@@ -82,20 +88,33 @@ export const api = {
         .from("profiles")
         .select("id, full_name, username, avatar_url")
         .eq("id", id)
-        .maybeSingle()
-      return data as { id: string; full_name: string | null; username: string | null; avatar_url: string | null } | null
+        .maybeSingle();
+      return data as {
+        id: string;
+        full_name: string | null;
+        username: string | null;
+        avatar_url: string | null;
+      } | null;
     },
   },
-}
+};
 
 // One channel for the whole widget lifetime — every message addressed to me
 // arrives here regardless of which thread (if any) is open.
-export const subscribe_incoming = (me: string, on_insert: (msg: Message) => void): RealtimeChannel =>
+export const subscribe_incoming = (
+  me: string,
+  on_insert: (msg: Message) => void,
+): RealtimeChannel =>
   supabase
     .channel(`chat_incoming_${me}`)
     .on(
       "postgres_changes",
-      { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${me}` },
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+        filter: `recipient_id=eq.${me}`,
+      },
       (payload) => on_insert(payload.new as Message),
     )
-    .subscribe()
+    .subscribe();

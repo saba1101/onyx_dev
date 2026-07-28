@@ -47,7 +47,13 @@ const Login = () => {
     >
       <Form method="post" className="flex flex-col gap-4">
         <Field name="email" label="Email" type="email" autoComplete="email" required placeholder="you@onyx.dev" />
-        <Field name="password" label="Password" type="password" autoComplete="current-password" required placeholder="••••••••" />
+
+        <div className="flex flex-col gap-1.5">
+          <Field name="password" label="Password" type="password" autoComplete="current-password" required placeholder="••••••••" />
+          <Link to="/forgot-password" className="self-end text-[11px] font-medium text-muted transition-colors hover:text-flag-red">
+            Forgot password?
+          </Link>
+        </div>
 
         {feedback?.error && (
           <motion.p

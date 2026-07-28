@@ -11,6 +11,7 @@ export type WProject = {
   color:       StatusColor
   visibility:  ProjectVisibility
   owner_id:    string | null
+  client_id:   string | null
   created_at:  string
   updated_at:  string
 }
@@ -91,9 +92,9 @@ export const api = {
       supabase.from("workspace_projects").select("*").order("updated_at", { ascending: false }),
     get: (id: string) =>
       supabase.from("workspace_projects").select("*").eq("id", id).single(),
-    create: (d: { name: string; description: string | null; color: StatusColor; visibility: ProjectVisibility; owner_id: string }) =>
+    create: (d: { name: string; description: string | null; color: StatusColor; visibility: ProjectVisibility; owner_id: string; client_id: string | null }) =>
       supabase.from("workspace_projects").insert(d).select().single(),
-    update: (id: string, patch: Partial<Pick<WProject, "name" | "description" | "color" | "visibility">>) =>
+    update: (id: string, patch: Partial<Pick<WProject, "name" | "description" | "color" | "visibility" | "client_id">>) =>
       supabase.from("workspace_projects")
         .update({ ...patch, updated_at: new Date().toISOString() })
         .eq("id", id).select().single(),

@@ -10,12 +10,13 @@ import { Dropdown } from "~/components/ui/dropdown"
 import { ProjectModal } from "~/features/workspace/components/project-modal"
 import { ConfirmPopover } from "~/components/ui/confirm-popover"
 import {
-  PlusIcon, PencilIcon, TrashIcon, LockIcon, GlobeIcon, ChevronIcon,
+  PlusIcon, PencilIcon, TrashIcon, LockIcon, GlobeIcon, ChevronIcon, BriefcaseIcon,
 } from "~/components/ui/icons"
 import {
   api, fmt_rel, STATUS_COLORS,
   type WProject, type WProfile,
 } from "~/features/workspace/lib/workspace"
+import { api as clients_api, type Client } from "~/features/clients/lib/clients"
 
 export const meta = () => [{ title: "Workspace — Onyx Dev" }]
 
@@ -43,16 +44,17 @@ const KanbanIcon = () => (
 // ── Project card (grid) ────────────────────────────────────────────────────────
 
 const ProjectCard = ({
-  project, task_count, owner_label, can_edit, deleting, on_open, on_edit, on_delete,
+  project, task_count, owner_label, client_label, can_edit, deleting, on_open, on_edit, on_delete,
 }: {
-  project:     WProject
-  task_count:  number
-  owner_label: string | null
-  can_edit:    boolean
-  deleting:    boolean
-  on_open:     () => void
-  on_edit:     () => void
-  on_delete:   () => void
+  project:      WProject
+  task_count:   number
+  owner_label:  string | null
+  client_label: string | null
+  can_edit:     boolean
+  deleting:     boolean
+  on_open:      () => void
+  on_edit:      () => void
+  on_delete:    () => void
 }) => {
   const c = STATUS_COLORS[project.color]
   return (
@@ -107,6 +109,12 @@ const ProjectCard = ({
         {project.description || <span className="italic text-muted/50">No description</span>}
       </p>
 
+      {client_label && (
+        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-flag-red/10 px-2 py-0.5 text-[10px] font-medium text-flag-red">
+          <BriefcaseIcon size={9} /> {client_label}
+        </span>
+      )}
+
       <div className="flex items-center justify-between border-t border-line/50 pt-3 text-[11px] text-muted">
         <span>{task_count} task{task_count !== 1 ? "s" : ""}</span>
         <span>{owner_label ? `${owner_label} · ` : ""}{fmt_rel(project.updated_at)}</span>
@@ -118,16 +126,17 @@ const ProjectCard = ({
 // ── Project row (list) ─────────────────────────────────────────────────────────
 
 const ProjectRow = ({
-  project, task_count, owner_label, can_edit, deleting, on_open, on_edit, on_delete,
+  project, task_count, owner_label, client_label, can_edit, deleting, on_open, on_edit, on_delete,
 }: {
-  project:     WProject
-  task_count:  number
-  owner_label: string | null
-  can_edit:    boolean
-  deleting:    boolean
-  on_open:     () => void
-  on_edit:     () => void
-  on_delete:   () => void
+  project:      WProject
+  task_count:   number
+  owner_label:  string | null
+  client_label: string | null
+  can_edit:     boolean
+  deleting:     boolean
+  on_open:      () => void
+  on_edit:      () => void
+  on_delete:    () => void
 }) => {
   const c = STATUS_COLORS[project.color]
   return (
@@ -141,6 +150,11 @@ const ProjectRow = ({
             <p className="truncate text-sm font-medium text-ink">{project.name}</p>
             <p className="truncate text-[11px] text-muted">{project.description || "—"}</p>
           </div>
+          {client_label && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-flag-red/10 px-2 py-0.5 text-[10px] font-medium text-flag-red">
+              <BriefcaseIcon size={9} /> {client_label}
+            </span>
+          )}
         </div>
       </td>
       <td className="px-4 py-3">
@@ -202,6 +216,7 @@ export default function WorkspacePage() {
   const [projects,   set_projects]   = useState<WProject[]>([])
   const [counts,     set_counts]     = useState<Map<string, number>>(new Map())
   const [profiles,   set_profiles]   = useState<Map<string, WProfile>>(new Map())
+  const [clients,    set_clients]    = useState<Map<string, Client>>(new Map())
   const [fetching,   set_fetching]   = useState(true)
   const [search,     set_search]     = useState("")
   const [owner_f,    set_owner_f]    = useState("all")
@@ -213,8 +228,8 @@ export default function WorkspacePage() {
   const [deleting_id, set_deleting_id] = useState<string | null>(null)
 
   const load = () => {
-    Promise.all([api.projects.list(), api.tasks.count_by_project(), api.profiles.list()]).then(
-      ([pr, tc, pf]) => {
+    Promise.all([api.projects.list(), api.tasks.count_by_project(), api.profiles.list(), clients_api.list()]).then(
+      ([pr, tc, pf, cl]) => {
         if (pr.error) { notify({ tone: "error", title: "Failed to load projects", message: pr.error.message }); set_fetching(false); return }
         set_projects((pr.data as WProject[]) ?? [])
 
@@ -225,6 +240,10 @@ export default function WorkspacePage() {
         const pmap = new Map<string, WProfile>()
         ;((pf.data ?? []) as WProfile[]).forEach(p => pmap.set(p.id, p))
         set_profiles(pmap)
+
+        const clmap = new Map<string, Client>()
+        ;((cl.data ?? []) as Client[]).forEach(c => clmap.set(c.id, c))
+        set_clients(clmap)
 
         set_fetching(false)
       },
@@ -244,6 +263,9 @@ export default function WorkspacePage() {
     const owner = project.owner_id ? profiles.get(project.owner_id) : null
     return owner?.full_name || owner?.username || null
   }
+
+  const client_label = (project: WProject): string | null =>
+    project.client_id ? clients.get(project.client_id)?.company_name ?? null : null
 
   const q = search.trim().toLowerCase()
   const filtered = useMemo(() => projects.filter(p => {
@@ -403,6 +425,7 @@ export default function WorkspacePage() {
                   project={p}
                   task_count={counts.get(p.id) ?? 0}
                   owner_label={owner_label(p)}
+                  client_label={client_label(p)}
                   can_edit={p.owner_id === user.id || is_root}
                   deleting={deleting_id === p.id}
                   on_open={() => navigate(`/workspace/${p.id}`)}
@@ -431,6 +454,7 @@ export default function WorkspacePage() {
                       project={p}
                       task_count={counts.get(p.id) ?? 0}
                       owner_label={owner_label(p)}
+                      client_label={client_label(p)}
                       can_edit={p.owner_id === user.id || is_root}
                       deleting={deleting_id === p.id}
                       on_open={() => navigate(`/workspace/${p.id}`)}
