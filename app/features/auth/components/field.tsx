@@ -20,15 +20,15 @@ export const Field = ({ name, label, type = "text", autoComplete, required, plac
   return (
     <label className="flex flex-col gap-1.5">
       <span className="text-[11px] font-medium uppercase tracking-wide text-muted">{label}</span>
-      <motion.div
-        animate={{
-          boxShadow: active
-            ? "0 0 0 3px hsl(355 81% 47% / 0.16)"
-            : "0 0 0 0px hsl(355 81% 47% / 0)",
-        }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        className="relative rounded-lg"
-      >
+      <div className="relative rounded-lg">
+        <motion.div
+          aria-hidden
+          initial={{ opacity: 0 }}
+          animate={{ opacity: active ? 0.16 : 0 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          style={{ boxShadow: "0 0 0 3px var(--color-flag-red)" }}
+          className="pointer-events-none absolute inset-0 rounded-lg"
+        />
         <input
           name={name}
           type={input_type}
@@ -50,7 +50,7 @@ export const Field = ({ name, label, type = "text", autoComplete, required, plac
             {show_password ? <EyeOffIcon size={15} /> : <EyeIcon size={15} />}
           </button>
         )}
-      </motion.div>
+      </div>
     </label>
   )
 }

@@ -77,7 +77,7 @@ const Ring = ({ rate }: { rate: number }) => {
       <circle cx="36" cy="36" r={r} fill="none" strokeWidth="7" stroke="currentColor" className="text-line/40" />
       <circle
         cx="36" cy="36" r={r} fill="none" strokeWidth="7"
-        stroke="#c0392b" strokeLinecap="round"
+        stroke="var(--color-flag-red)" strokeLinecap="round"
         strokeDasharray={`${dash} ${circ}`}
         transform="rotate(-90 36 36)"
         style={{ transition: "stroke-dasharray 1.2s cubic-bezier(.22,1,.36,1)" }}
@@ -295,7 +295,7 @@ function Body({ tasks, statuses, profiles }: { tasks: WTask[]; statuses: WStatus
                   <XAxis type="number" tick={tick_style} axisLine={false} tickLine={false} allowDecimals={false} />
                   <YAxis type="category" dataKey="name" tick={tick_style} axisLine={false} tickLine={false} width={64} />
                   <Tooltip content={<Tip />} cursor={{ fill: "var(--color-line)", fillOpacity: 0.3 }} />
-                  <Bar dataKey="assigned" name="Assigned" fill="#c0392b" radius={[0, 4, 4, 0]} maxBarSize={20} />
+                  <Bar dataKey="assigned" name="Assigned" fill="var(--color-flag-red)" radius={[0, 4, 4, 0]} maxBarSize={20} />
                   <Bar dataKey="created"  name="Created"  fill="#60a5fa" radius={[0, 4, 4, 0]} maxBarSize={20} />
                 </BarChart>
               </ResponsiveContainer>
@@ -321,8 +321,8 @@ function Body({ tasks, statuses, profiles }: { tasks: WTask[]; statuses: WStatus
                     <stop offset="95%" stopColor="#60a5fa" stopOpacity={0}    />
                   </linearGradient>
                   <linearGradient id="gb" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#c0392b" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#c0392b" stopOpacity={0}   />
+                    <stop offset="5%"  stopColor="var(--color-flag-red)" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="var(--color-flag-red)" stopOpacity={0}   />
                   </linearGradient>
                 </defs>
                 <CartesianGrid {...grid_props} />
@@ -330,7 +330,7 @@ function Body({ tasks, statuses, profiles }: { tasks: WTask[]; statuses: WStatus
                 <YAxis tick={tick_style} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip content={<Tip />} />
                 <Area type="monotone" dataKey="features" name="Features" stroke="#60a5fa" strokeWidth={2} fill="url(#gf)" dot={false} />
-                <Area type="monotone" dataKey="bugs"     name="Bugs"     stroke="#c0392b" strokeWidth={2} fill="url(#gb)" dot={false} />
+                <Area type="monotone" dataKey="bugs"     name="Bugs"     stroke="var(--color-flag-red)" strokeWidth={2} fill="url(#gb)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -350,17 +350,17 @@ function Body({ tasks, statuses, profiles }: { tasks: WTask[]; statuses: WStatus
                 <PieChart>
                   <Pie data={[
                     { name: "Features", value: features, color: "#60a5fa" },
-                    { name: "Bugs",     value: bugs,     color: "#c0392b" },
+                    { name: "Bugs",     value: bugs,     color: "var(--color-flag-red)" },
                   ]} cx="50%" cy="50%" innerRadius={38} outerRadius={60} paddingAngle={3} dataKey="value">
                     <Cell fill="#60a5fa" stroke="transparent" />
-                    <Cell fill="#c0392b" stroke="transparent" />
+                    <Cell fill="var(--color-flag-red)" stroke="transparent" />
                   </Pie>
                   <Tooltip content={<Tip />} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex-1 space-y-3">
                 <TypeRow label="Features" value={features} total={total} color="#60a5fa" />
-                <TypeRow label="Bugs"     value={bugs}     total={total} color="#c0392b" />
+                <TypeRow label="Bugs"     value={bugs}     total={total} color="var(--color-flag-red)" />
                 <div className="border-t border-line/40 pt-2">
                   <p className="text-[11px] text-muted">
                     Bug rate: <span className="font-semibold text-ink">{total ? Math.round((bugs / total) * 100) : 0}%</span>

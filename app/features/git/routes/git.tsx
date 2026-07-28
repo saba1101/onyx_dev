@@ -853,8 +853,8 @@ const ActivityTab = ({ data }: { data: GitData }) => {
             <AreaChart data={weekly} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="commit_grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#dc2626" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#dc2626" stopOpacity={0.03} />
+                  <stop offset="5%"  stopColor="var(--color-flag-red)" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="var(--color-flag-red)" stopOpacity={0.03} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,100,100,0.1)" vertical={false} />
@@ -871,15 +871,15 @@ const ActivityTab = ({ data }: { data: GitData }) => {
                 axisLine={false}
                 allowDecimals={false}
               />
-              <RTooltip content={<CT />} cursor={{ stroke: "#dc2626", strokeWidth: 1, strokeDasharray: "4 2" }} />
+              <RTooltip content={<CT />} cursor={{ stroke: "var(--color-flag-red)", strokeWidth: 1, strokeDasharray: "4 2" }} />
               <Area
                 type="monotone"
                 dataKey="commits"
-                stroke="#dc2626"
+                stroke="var(--color-flag-red)"
                 strokeWidth={1.5}
                 fill="url(#commit_grad)"
                 dot={false}
-                activeDot={{ r: 4, fill: "#dc2626", strokeWidth: 0 }}
+                activeDot={{ r: 4, fill: "var(--color-flag-red)", strokeWidth: 0 }}
               />
             </AreaChart>
           </ResponsiveContainer>

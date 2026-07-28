@@ -11,8 +11,8 @@
   --color-royal-gold: hsl(49 93% 67%);
   --color-light-green: hsl(113 63% 66%);
   /* Fixed negative/loss semantic color — deliberately NOT --color-flag-red,
-     which the settings accent picker overwrites at runtime (see use-accent.ts).
-     Gain/loss coding must stay red/green regardless of the chosen accent. */
+     which the settings theme palette overwrites at runtime (see use-theme-palette.ts).
+     Gain/loss coding must stay red/green regardless of the chosen palette. */
   --color-loss: hsl(355 81% 47%);
   --color-carbon-black: hsl(210 7% 11%);
   --color-obsidian: hsl(220 12% 6%);
@@ -29,29 +29,41 @@
 
 :root {
   --surface-bg: hsl(0 0% 100% / 0.72);
-  --surface-line: hsl(210 16% 76% / 0.90);
+  --surface-line: hsl(210 16% 76% / 0.9);
   --surface-shadow:
-    0 1px 3px hsl(210 14% 22% / 0.07),
-    0 8px 28px -8px hsl(210 14% 22% / 0.22),
+    0 1px 3px hsl(210 14% 22% / 0.07), 0 8px 28px -8px hsl(210 14% 22% / 0.22),
     inset 0 1px 0 hsl(0 0% 100% / 0.85);
 
-  --backdrop-base: hsl(20 18% 96%);
-  --backdrop-radial: radial-gradient(
-    130% 90% at 50% -10%,
-    hsl(355 55% 96%) 0%,
-    hsl(20 22% 95%) 48%,
-    hsl(215 14% 91%) 100%
-  );
+  /* Three soft blooms (accent, gold, page-tint) instead of one flat vignette —
+     everything here derives from live palette tokens (see use-theme-palette.ts),
+     so the whole wash reflows with the chosen palette instead of any part of
+     it being a fixed hue. This is the single place accent glow is drawn —
+     Backdrop.tsx no longer layers its own separate red_glow on top. */
+  --backdrop-base: var(--color-page);
+  --backdrop-radial:
+    radial-gradient(
+      60% 50% at 14% -6%,
+      color-mix(in srgb, var(--color-flag-red) 20%, transparent) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      55% 42% at 96% 4%,
+      color-mix(in srgb, var(--color-royal-gold) 14%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      85% 55% at 50% 108%,
+      color-mix(in srgb, var(--color-card) 55%, transparent) 0%,
+      transparent 62%
+    );
 }
 
 .dark {
-  --surface-bg: hsl(220 12% 7% / 0.90);
-  --surface-line: hsl(220 10% 18% / 1.0);
+  --surface-bg: hsl(220 12% 7% / 0.9);
+  --surface-line: hsl(220 10% 18% / 1);
   --surface-shadow:
-    0 0 0 1px hsl(220 10% 16% / 0.90),
-    0 2px 6px hsl(0 0% 0% / 0.55),
-    0 20px 50px -16px hsl(0 0% 0% / 0.82),
-    inset 0 1px 0 hsl(0 0% 100% / 0.045);
+    0 0 0 1px hsl(220 10% 16% / 0.9), 0 2px 6px hsl(0 0% 0% / 0.55),
+    0 20px 50px -16px hsl(0 0% 0% / 0.82), inset 0 1px 0 hsl(0 0% 100% / 0.045);
 
   --color-page: var(--color-carbon-black);
   --color-card: hsl(220 12% 8%);
@@ -60,13 +72,6 @@
   --color-line: hsl(220 10% 18%);
   --color-primary: var(--color-flag-red);
   --color-accent: var(--color-royal-gold);
-  --backdrop-base: #16100e;
-  --backdrop-radial: radial-gradient(
-    130% 90% at 50% -10%,
-    #2a211d 0%,
-    #1c1513 48%,
-    #130d0c 100%
-  );
 }
 
 html,
@@ -85,13 +90,23 @@ body {
     position: relative;
     isolation: isolate;
     border: 1px solid var(--surface-line);
-    background-color: var(--surface-bg);
+    /* A faint accent-tinted sheen top-left, fading to the flat surface color
+       — every card/modal/table shell uses .surface, so this is the cheapest
+       way to make the whole app read as "one palette" instead of flat gray
+       boxes with a colored accent bolted on elsewhere. */
+    background-image: linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--color-flag-red) 5%, var(--surface-bg)) 0%,
+      var(--surface-bg) 45%
+    );
     box-shadow: var(--surface-shadow);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
