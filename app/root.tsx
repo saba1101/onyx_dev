@@ -20,6 +20,7 @@ import { ProfileProvider } from "~/features/profile/lib/profile-context";
 import { PermissionsProvider } from "~/features/permissions/lib/permissions-context";
 import { LocationSharingSync } from "~/features/locations/lib/location-sharing-sync";
 import { ChatWidget } from "~/features/chat/components/chat-widget";
+import { UpdateNotice } from "~/components/ui/update-notice";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -94,6 +95,7 @@ const App = () => (
       <PermissionsProvider>
         <LocationSharingSync />
         <ChatWidget />
+        <UpdateNotice />
         <Outlet />
       </PermissionsProvider>
     </ProfileProvider>
