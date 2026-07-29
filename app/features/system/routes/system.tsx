@@ -32,6 +32,9 @@ import {
 } from "~/features/system/lib/system-stats";
 import { DatabaseTab } from "~/features/database/routes/database";
 import { StorageTab } from "~/features/storage/routes/storage";
+import { cache_get, cache_set } from "~/lib/query-cache";
+
+const CACHE_STATS = "system:stats";
 
 export const meta = () => [{ title: "System — Onyx Dev" }];
 
@@ -407,8 +410,12 @@ const System = () => {
   const [active_tab, set_active_tab] = useState<
     "health" | "database" | "storage"
   >("health");
-  const [stats, set_stats] = useState<SystemStats | null>(null);
-  const [fetching, set_fetching] = useState(true);
+  const [stats, set_stats] = useState<SystemStats | null>(
+    () => cache_get<SystemStats>(CACHE_STATS) ?? null,
+  );
+  const [fetching, set_fetching] = useState(
+    () => !cache_get<SystemStats>(CACHE_STATS),
+  );
   const [error, set_error] = useState<string | null>(null);
   const [refreshed, set_refreshed] = useState<Date | null>(null);
   const [refreshing, set_refreshing] = useState(false);
@@ -421,6 +428,7 @@ const System = () => {
     if (error) set_error(error);
     else {
       set_stats(data);
+      cache_set(CACHE_STATS, data);
       set_refreshed(new Date());
     }
     set_fetching(false);
@@ -428,7 +436,7 @@ const System = () => {
   }, []);
 
   useEffect(() => {
-    load();
+    load(!!cache_get<SystemStats>(CACHE_STATS));
   }, [load]);
 
   if (auth_loading || profile_loading) return null;

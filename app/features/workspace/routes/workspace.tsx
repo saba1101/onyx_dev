@@ -1,62 +1,116 @@
-import { useEffect, useMemo, useState } from "react"
-import { useNavigate } from "react-router"
-import { motion } from "motion/react"
-import { useAuth } from "~/features/auth/lib/auth"
-import { useProfile } from "~/features/profile/lib/profile-context"
-import { SideRail } from "~/components/ui/side-rail"
-import { use_notify } from "~/hooks/use-notify"
-import { SearchInput } from "~/components/ui/search-input"
-import { Dropdown } from "~/components/ui/dropdown"
-import { ProjectModal } from "~/features/workspace/components/project-modal"
-import { ConfirmPopover } from "~/components/ui/confirm-popover"
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
+import { motion } from "motion/react";
+import { useAuth } from "~/features/auth/lib/auth";
+import { useProfile } from "~/features/profile/lib/profile-context";
+import { SideRail } from "~/components/ui/side-rail";
+import { use_notify } from "~/hooks/use-notify";
+import { SearchInput } from "~/components/ui/search-input";
+import { Dropdown } from "~/components/ui/dropdown";
+import { ProjectModal } from "~/features/workspace/components/project-modal";
+import { ConfirmPopover } from "~/components/ui/confirm-popover";
 import {
-  PlusIcon, PencilIcon, TrashIcon, LockIcon, GlobeIcon, ChevronIcon, BriefcaseIcon,
-} from "~/components/ui/icons"
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  LockIcon,
+  GlobeIcon,
+  ChevronIcon,
+  BriefcaseIcon,
+} from "~/components/ui/icons";
 import {
-  api, fmt_rel, STATUS_COLORS,
-  type WProject, type WProfile,
-} from "~/features/workspace/lib/workspace"
-import { api as clients_api, type Client } from "~/features/clients/lib/clients"
+  api,
+  fmt_rel,
+  STATUS_COLORS,
+  type WProject,
+  type WProfile,
+} from "~/features/workspace/lib/workspace";
+import {
+  api as clients_api,
+  type Client,
+} from "~/features/clients/lib/clients";
+import { cache_get, cache_set } from "~/lib/query-cache";
 
-export const meta = () => [{ title: "Workspace — Onyx Dev" }]
+export const meta = () => [{ title: "Workspace — Onyx Dev" }];
 
-const ease_out = [0.22, 1, 0.36, 1] as const
+const ease_out = [0.22, 1, 0.36, 1] as const;
 
 // ── Grid/list view toggle icons ───────────────────────────────────────────────
 
 const GridViewIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="8" height="8" rx="1.5" /><rect x="13" y="3" width="8" height="8" rx="1.5" />
-    <rect x="3" y="13" width="8" height="8" rx="1.5" /><rect x="13" y="13" width="8" height="8" rx="1.5" />
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="3" width="8" height="8" rx="1.5" />
+    <rect x="13" y="3" width="8" height="8" rx="1.5" />
+    <rect x="3" y="13" width="8" height="8" rx="1.5" />
+    <rect x="13" y="13" width="8" height="8" rx="1.5" />
   </svg>
-)
+);
 const ListViewIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="4" y1="6" x2="20" y2="6" />
+    <line x1="4" y1="12" x2="20" y2="12" />
+    <line x1="4" y1="18" x2="20" y2="18" />
   </svg>
-)
+);
 const KanbanIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="4" height="14" rx="1.5" /><rect x="10" y="3" width="4" height="9" rx="1.5" /><rect x="17" y="3" width="4" height="11" rx="1.5" />
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="3" width="4" height="14" rx="1.5" />
+    <rect x="10" y="3" width="4" height="9" rx="1.5" />
+    <rect x="17" y="3" width="4" height="11" rx="1.5" />
   </svg>
-)
+);
 
 // ── Project card (grid) ────────────────────────────────────────────────────────
 
 const ProjectCard = ({
-  project, task_count, owner_label, client_label, can_edit, deleting, on_open, on_edit, on_delete,
+  project,
+  task_count,
+  owner_label,
+  client_label,
+  can_edit,
+  deleting,
+  on_open,
+  on_edit,
+  on_delete,
 }: {
-  project:      WProject
-  task_count:   number
-  owner_label:  string | null
-  client_label: string | null
-  can_edit:     boolean
-  deleting:     boolean
-  on_open:      () => void
-  on_edit:      () => void
-  on_delete:    () => void
+  project: WProject;
+  task_count: number;
+  owner_label: string | null;
+  client_label: string | null;
+  can_edit: boolean;
+  deleting: boolean;
+  on_open: () => void;
+  on_edit: () => void;
+  on_delete: () => void;
 }) => {
-  const c = STATUS_COLORS[project.color]
+  const c = STATUS_COLORS[project.color];
   return (
     <motion.div
       whileHover={{ y: -2 }}
@@ -68,7 +122,10 @@ const ProjectCard = ({
         <div className="absolute right-3 top-3 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
           <button
             type="button"
-            onClick={e => { e.stopPropagation(); on_edit() }}
+            onClick={(e) => {
+              e.stopPropagation();
+              on_edit();
+            }}
             title="Edit project"
             className="grid h-7 w-7 cursor-pointer place-items-center rounded-lg text-muted transition-colors hover:bg-line/50 hover:text-ink"
           >
@@ -93,20 +150,30 @@ const ProjectCard = ({
       )}
 
       <div className="flex items-center gap-3">
-        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${c.badge}`}>
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${c.badge}`}
+        >
           <KanbanIcon />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-ink">{project.name}</p>
+          <p className="truncate text-sm font-semibold text-ink">
+            {project.name}
+          </p>
           <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted">
-            {project.visibility === "public" ? <GlobeIcon size={9} /> : <LockIcon size={9} />}
+            {project.visibility === "public" ? (
+              <GlobeIcon size={9} />
+            ) : (
+              <LockIcon size={9} />
+            )}
             {project.visibility}
           </span>
         </div>
       </div>
 
       <p className="line-clamp-2 min-h-[2.2em] text-xs text-muted">
-        {project.description || <span className="italic text-muted/50">No description</span>}
+        {project.description || (
+          <span className="italic text-muted/50">No description</span>
+        )}
       </p>
 
       {client_label && (
@@ -116,39 +183,61 @@ const ProjectCard = ({
       )}
 
       <div className="flex items-center justify-between border-t border-line/50 pt-3 text-[11px] text-muted">
-        <span>{task_count} task{task_count !== 1 ? "s" : ""}</span>
-        <span>{owner_label ? `${owner_label} · ` : ""}{fmt_rel(project.updated_at)}</span>
+        <span>
+          {task_count} task{task_count !== 1 ? "s" : ""}
+        </span>
+        <span>
+          {owner_label ? `${owner_label} · ` : ""}
+          {fmt_rel(project.updated_at)}
+        </span>
       </div>
     </motion.div>
-  )
-}
+  );
+};
 
 // ── Project row (list) ─────────────────────────────────────────────────────────
 
 const ProjectRow = ({
-  project, task_count, owner_label, client_label, can_edit, deleting, on_open, on_edit, on_delete,
+  project,
+  task_count,
+  owner_label,
+  client_label,
+  can_edit,
+  deleting,
+  on_open,
+  on_edit,
+  on_delete,
 }: {
-  project:      WProject
-  task_count:   number
-  owner_label:  string | null
-  client_label: string | null
-  can_edit:     boolean
-  deleting:     boolean
-  on_open:      () => void
-  on_edit:      () => void
-  on_delete:    () => void
+  project: WProject;
+  task_count: number;
+  owner_label: string | null;
+  client_label: string | null;
+  can_edit: boolean;
+  deleting: boolean;
+  on_open: () => void;
+  on_edit: () => void;
+  on_delete: () => void;
 }) => {
-  const c = STATUS_COLORS[project.color]
+  const c = STATUS_COLORS[project.color];
   return (
-    <tr onClick={on_open} className="group cursor-pointer border-b border-line/50 transition-colors last:border-0 hover:bg-flag-red/[0.03] dark:hover:bg-flag-red/[0.05]">
+    <tr
+      onClick={on_open}
+      className="group cursor-pointer border-b border-line/50 transition-colors last:border-0 hover:bg-flag-red/[0.03] dark:hover:bg-flag-red/[0.05]"
+    >
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${c.badge}`}>
+          <span
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${c.badge}`}
+          >
             <KanbanIcon />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-ink">{project.name}</p>
-            <p className="truncate text-[11px] text-muted">{project.description || "—"}</p>
+            <p className="truncate text-sm font-medium text-ink">
+              {project.name}
+            </p>
+            <p className="truncate text-[11px] text-muted">
+              {project.description || "—"}
+            </p>
           </div>
           {client_label && (
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-flag-red/10 px-2 py-0.5 text-[10px] font-medium text-flag-red">
@@ -159,19 +248,32 @@ const ProjectRow = ({
       </td>
       <td className="px-4 py-3">
         <span className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
-          {project.visibility === "public" ? <GlobeIcon size={9} /> : <LockIcon size={9} />}
+          {project.visibility === "public" ? (
+            <GlobeIcon size={9} />
+          ) : (
+            <LockIcon size={9} />
+          )}
           {project.visibility}
         </span>
       </td>
-      <td className="hidden px-4 py-3 text-xs text-muted sm:table-cell">{task_count}</td>
-      <td className="hidden px-4 py-3 text-[11px] text-muted md:table-cell">{owner_label ?? "—"}</td>
-      <td className="hidden px-4 py-3 text-[11px] text-muted lg:table-cell">{fmt_rel(project.updated_at)}</td>
+      <td className="hidden px-4 py-3 text-xs text-muted sm:table-cell">
+        {task_count}
+      </td>
+      <td className="hidden px-4 py-3 text-[11px] text-muted md:table-cell">
+        {owner_label ?? "—"}
+      </td>
+      <td className="hidden px-4 py-3 text-[11px] text-muted lg:table-cell">
+        {fmt_rel(project.updated_at)}
+      </td>
       <td className="px-4 py-3 text-right">
         {can_edit ? (
           <div className="flex items-center justify-end gap-1.5">
             <button
               type="button"
-              onClick={e => { e.stopPropagation(); on_edit() }}
+              onClick={(e) => {
+                e.stopPropagation();
+                on_edit();
+              }}
               className="inline-flex items-center gap-1 rounded-lg border border-line px-2.5 py-1 text-[11px] font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-flag-red"
             >
               <PencilIcon size={11} /> Edit
@@ -199,118 +301,176 @@ const ProjectRow = ({
         )}
       </td>
     </tr>
-  )
-}
+  );
+};
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-const VIEW_KEY = "workspace_view"
+const VIEW_KEY = "workspace_view";
+
+const CACHE_PROJECTS = "workspace:projects";
+const CACHE_COUNTS = "workspace:counts";
+const CACHE_PROFILES = "workspace:profiles";
+const CACHE_CLIENTS = "workspace:clients";
 
 export default function WorkspacePage() {
-  const { user, loading: auth_loading } = useAuth()
-  const { profile } = useProfile()
-  const notify = use_notify()
-  const navigate = useNavigate()
-  const is_root = profile?.role === "root"
+  const { user, loading: auth_loading } = useAuth();
+  const { profile } = useProfile();
+  const notify = use_notify();
+  const navigate = useNavigate();
+  const is_root = profile?.role === "root";
 
-  const [projects,   set_projects]   = useState<WProject[]>([])
-  const [counts,     set_counts]     = useState<Map<string, number>>(new Map())
-  const [profiles,   set_profiles]   = useState<Map<string, WProfile>>(new Map())
-  const [clients,    set_clients]    = useState<Map<string, Client>>(new Map())
-  const [fetching,   set_fetching]   = useState(true)
-  const [search,     set_search]     = useState("")
-  const [owner_f,    set_owner_f]    = useState("all")
-  const [view,       set_view]       = useState<"grid" | "list">(
-    () => (typeof window !== "undefined" && localStorage.getItem(VIEW_KEY) === "list" ? "list" : "grid"),
-  )
-  const [modal_open, set_modal_open] = useState(false)
-  const [editing,    set_editing]    = useState<WProject | null>(null)
-  const [deleting_id, set_deleting_id] = useState<string | null>(null)
+  const [projects, set_projects] = useState<WProject[]>(
+    () => cache_get<WProject[]>(CACHE_PROJECTS) ?? [],
+  );
+  const [counts, set_counts] = useState<Map<string, number>>(
+    () => cache_get<Map<string, number>>(CACHE_COUNTS) ?? new Map(),
+  );
+  const [profiles, set_profiles] = useState<Map<string, WProfile>>(
+    () => cache_get<Map<string, WProfile>>(CACHE_PROFILES) ?? new Map(),
+  );
+  const [clients, set_clients] = useState<Map<string, Client>>(
+    () => cache_get<Map<string, Client>>(CACHE_CLIENTS) ?? new Map(),
+  );
+  const [fetching, set_fetching] = useState(
+    () => !cache_get<WProject[]>(CACHE_PROJECTS),
+  );
+  const [search, set_search] = useState("");
+  const [owner_f, set_owner_f] = useState("all");
+  const [view, set_view] = useState<"grid" | "list">(() =>
+    typeof window !== "undefined" && localStorage.getItem(VIEW_KEY) === "list"
+      ? "list"
+      : "grid",
+  );
+  const [modal_open, set_modal_open] = useState(false);
+  const [editing, set_editing] = useState<WProject | null>(null);
+  const [deleting_id, set_deleting_id] = useState<string | null>(null);
 
   const load = () => {
-    Promise.all([api.projects.list(), api.tasks.count_by_project(), api.profiles.list(), clients_api.list()]).then(
-      ([pr, tc, pf, cl]) => {
-        if (pr.error) { notify({ tone: "error", title: "Failed to load projects", message: pr.error.message }); set_fetching(false); return }
-        set_projects((pr.data as WProject[]) ?? [])
+    Promise.all([
+      api.projects.list(),
+      api.tasks.count_by_project(),
+      api.profiles.list(),
+      clients_api.list(),
+    ]).then(([pr, tc, pf, cl]) => {
+      if (pr.error) {
+        notify({
+          tone: "error",
+          title: "Failed to load projects",
+          message: pr.error.message,
+        });
+        set_fetching(false);
+        return;
+      }
+      const projects_data = (pr.data as WProject[]) ?? [];
+      set_projects(projects_data);
+      cache_set(CACHE_PROJECTS, projects_data);
 
-        const cmap = new Map<string, number>()
-        ;((tc.data ?? []) as { project_id: string }[]).forEach(t => cmap.set(t.project_id, (cmap.get(t.project_id) ?? 0) + 1))
-        set_counts(cmap)
+      const cmap = new Map<string, number>();
+      ((tc.data ?? []) as { project_id: string }[]).forEach((t) =>
+        cmap.set(t.project_id, (cmap.get(t.project_id) ?? 0) + 1),
+      );
+      set_counts(cmap);
+      cache_set(CACHE_COUNTS, cmap);
 
-        const pmap = new Map<string, WProfile>()
-        ;((pf.data ?? []) as WProfile[]).forEach(p => pmap.set(p.id, p))
-        set_profiles(pmap)
+      const pmap = new Map<string, WProfile>();
+      ((pf.data ?? []) as WProfile[]).forEach((p) => pmap.set(p.id, p));
+      set_profiles(pmap);
+      cache_set(CACHE_PROFILES, pmap);
 
-        const clmap = new Map<string, Client>()
-        ;((cl.data ?? []) as Client[]).forEach(c => clmap.set(c.id, c))
-        set_clients(clmap)
+      const clmap = new Map<string, Client>();
+      ((cl.data ?? []) as Client[]).forEach((c) => clmap.set(c.id, c));
+      set_clients(clmap);
+      cache_set(CACHE_CLIENTS, clmap);
 
-        set_fetching(false)
-      },
-    )
-  }
+      set_fetching(false);
+    });
+  };
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load();
+  }, []);
 
   const set_view_persist = (v: "grid" | "list") => {
-    set_view(v)
-    localStorage.setItem(VIEW_KEY, v)
-  }
+    set_view(v);
+    localStorage.setItem(VIEW_KEY, v);
+  };
 
   const owner_label = (project: WProject): string | null => {
-    if (!user) return null
-    if (project.owner_id === user.id) return "You"
-    const owner = project.owner_id ? profiles.get(project.owner_id) : null
-    return owner?.full_name || owner?.username || null
-  }
+    if (!user) return null;
+    if (project.owner_id === user.id) return "You";
+    const owner = project.owner_id ? profiles.get(project.owner_id) : null;
+    return owner?.full_name || owner?.username || null;
+  };
 
   const client_label = (project: WProject): string | null =>
-    project.client_id ? clients.get(project.client_id)?.company_name ?? null : null
+    project.client_id
+      ? (clients.get(project.client_id)?.company_name ?? null)
+      : null;
 
-  const q = search.trim().toLowerCase()
-  const filtered = useMemo(() => projects.filter(p => {
-    if (q && !p.name.toLowerCase().includes(q) && !p.description?.toLowerCase().includes(q)) return false
-    if (owner_f === "mine" && p.owner_id !== user?.id) return false
-    if (owner_f === "public" && p.visibility !== "public") return false
-    return true
-  }), [projects, q, owner_f, user?.id])
+  const q = search.trim().toLowerCase();
+  const filtered = useMemo(
+    () =>
+      projects.filter((p) => {
+        if (
+          q &&
+          !p.name.toLowerCase().includes(q) &&
+          !p.description?.toLowerCase().includes(q)
+        )
+          return false;
+        if (owner_f === "mine" && p.owner_id !== user?.id) return false;
+        if (owner_f === "public" && p.visibility !== "public") return false;
+        return true;
+      }),
+    [projects, q, owner_f, user?.id],
+  );
 
-  const open_create = () => { set_editing(null); set_modal_open(true) }
-  const open_edit = (p: WProject) => { set_editing(p); set_modal_open(true) }
+  const open_create = () => {
+    set_editing(null);
+    set_modal_open(true);
+  };
+  const open_edit = (p: WProject) => {
+    set_editing(p);
+    set_modal_open(true);
+  };
 
   const on_saved = (p: WProject) => {
-    set_projects(prev => {
-      const idx = prev.findIndex(x => x.id === p.id)
-      return idx >= 0 ? prev.map(x => x.id === p.id ? p : x) : [p, ...prev]
-    })
-  }
+    set_projects((prev) => {
+      const idx = prev.findIndex((x) => x.id === p.id);
+      return idx >= 0 ? prev.map((x) => (x.id === p.id ? p : x)) : [p, ...prev];
+    });
+  };
   const on_deleted = (id: string) => {
-    set_projects(prev => prev.filter(p => p.id !== id))
-  }
+    set_projects((prev) => prev.filter((p) => p.id !== id));
+  };
 
   const on_confirm_delete = async (id: string) => {
-    set_deleting_id(id)
-    const { error } = await api.projects.remove(id)
-    if (error) notify({ tone: "error", title: "Failed to delete project", message: error.message })
-    else on_deleted(id)
-    set_deleting_id(null)
-  }
+    set_deleting_id(id);
+    const { error } = await api.projects.remove(id);
+    if (error)
+      notify({
+        tone: "error",
+        title: "Failed to delete project",
+        message: error.message,
+      });
+    else on_deleted(id);
+    set_deleting_id(null);
+  };
 
-  if (auth_loading) return null
-  if (!user) return null
+  if (auth_loading) return null;
+  if (!user) return null;
 
   const owner_filter_opts = [
-    { value: "all",    label: "All projects" },
-    { value: "mine",   label: "Mine" },
+    { value: "all", label: "All projects" },
+    { value: "mine", label: "Mine" },
     { value: "public", label: "Public" },
-  ]
+  ];
 
   return (
     <div className="flex h-full overflow-hidden">
       <SideRail />
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden pt-14 lg:pt-0">
-
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -318,22 +478,38 @@ export default function WorkspacePage() {
           className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line bg-card px-4 py-3 lg:px-6 lg:py-4"
         >
           <div className="flex items-center gap-2">
-            <h1 className="text-sm font-semibold tracking-tight text-ink">Workspace</h1>
+            <h1 className="text-sm font-semibold tracking-tight text-ink">
+              Workspace
+            </h1>
             <span className="text-[11px] text-muted">
-              {fetching ? "Loading…" : `${projects.length} project${projects.length !== 1 ? "s" : ""}`}
+              {fetching
+                ? "Loading…"
+                : `${projects.length} project${projects.length !== 1 ? "s" : ""}`}
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <SearchInput value={search} on_change={set_search} placeholder="Search projects…" class_name="w-40 lg:w-56" />
+            <SearchInput
+              value={search}
+              on_change={set_search}
+              placeholder="Search projects…"
+              class_name="w-40 lg:w-56"
+            />
 
-            <Dropdown value={owner_f} options={owner_filter_opts} on_select={set_owner_f} menu_width="w-36"
+            <Dropdown
+              value={owner_f}
+              options={owner_filter_opts}
+              on_select={set_owner_f}
+              menu_width="w-36"
               trigger_class="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-ink"
             >
               {({ open }) => (
                 <>
-                  {owner_filter_opts.find(o => o.value === owner_f)?.label}
-                  <ChevronIcon size={11} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+                  {owner_filter_opts.find((o) => o.value === owner_f)?.label}
+                  <ChevronIcon
+                    size={11}
+                    className={`transition-transform ${open ? "rotate-180" : ""}`}
+                  />
                 </>
               )}
             </Dropdown>
@@ -373,7 +549,10 @@ export default function WorkspacePage() {
             view === "grid" ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="surface flex flex-col gap-3 rounded-2xl p-4">
+                  <div
+                    key={i}
+                    className="surface flex flex-col gap-3 rounded-2xl p-4"
+                  >
                     <div className="h-9 w-9 animate-pulse rounded-xl bg-line/40" />
                     <div className="h-3 w-32 animate-pulse rounded bg-line/40" />
                     <div className="h-8 animate-pulse rounded bg-line/30" />
@@ -383,7 +562,10 @@ export default function WorkspacePage() {
             ) : (
               <div className="surface overflow-hidden rounded-2xl">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4 border-b border-line/50 px-4 py-3 last:border-0">
+                  <div
+                    key={i}
+                    className="flex items-center gap-4 border-b border-line/50 px-4 py-3 last:border-0"
+                  >
                     <div className="h-8 w-8 animate-pulse rounded-lg bg-line/40" />
                     <div className="flex-1 space-y-1.5">
                       <div className="h-2.5 w-32 animate-pulse rounded bg-line/40" />
@@ -401,8 +583,12 @@ export default function WorkspacePage() {
               {projects.length === 0 ? (
                 <>
                   <div>
-                    <p className="text-sm font-semibold text-ink">No projects yet</p>
-                    <p className="mt-1 text-xs text-muted">Create a project to get a kanban board for its tasks</p>
+                    <p className="text-sm font-semibold text-ink">
+                      No projects yet
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      Create a project to get a kanban board for its tasks
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -414,12 +600,14 @@ export default function WorkspacePage() {
                   </button>
                 </>
               ) : (
-                <p className="text-sm text-muted">No projects match your filters.</p>
+                <p className="text-sm text-muted">
+                  No projects match your filters.
+                </p>
               )}
             </div>
           ) : view === "grid" ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filtered.map(p => (
+              {filtered.map((p) => (
                 <ProjectCard
                   key={p.id}
                   project={p}
@@ -441,14 +629,20 @@ export default function WorkspacePage() {
                   <tr className="border-b border-line/60 text-[10px] uppercase tracking-widest text-muted">
                     <th className="px-4 py-2.5 font-medium">Project</th>
                     <th className="px-4 py-2.5 font-medium">Visibility</th>
-                    <th className="hidden px-4 py-2.5 font-medium sm:table-cell">Tasks</th>
-                    <th className="hidden px-4 py-2.5 font-medium md:table-cell">Owner</th>
-                    <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Updated</th>
+                    <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
+                      Tasks
+                    </th>
+                    <th className="hidden px-4 py-2.5 font-medium md:table-cell">
+                      Owner
+                    </th>
+                    <th className="hidden px-4 py-2.5 font-medium lg:table-cell">
+                      Updated
+                    </th>
                     <th className="px-4 py-2.5" />
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map(p => (
+                  {filtered.map((p) => (
                     <ProjectRow
                       key={p.id}
                       project={p}
@@ -478,5 +672,5 @@ export default function WorkspacePage() {
         on_deleted={on_deleted}
       />
     </div>
-  )
+  );
 }

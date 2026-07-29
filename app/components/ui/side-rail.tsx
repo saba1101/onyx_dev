@@ -36,7 +36,7 @@ export const LogoMark = () => (
 );
 
 const Brand = ({ hidden }: { hidden: string }) => (
-  <Link to="/" className="flex items-center gap-2.5">
+  <Link to="/" prefetch="intent" className="flex items-center gap-2.5">
     <LogoMark />
     <span
       className={`inline-flex items-center text-sm font-bold tracking-tight ${hidden}`}
@@ -59,7 +59,13 @@ const UserCard = ({ collapsed }: { collapsed: boolean }) => {
     profile?.username ||
     user.email?.split("@")[0] ||
     "User";
-  const tone = status_tone[effective_status(profile?.status ?? "active", profile?.last_seen_at ?? null)];
+  const tone =
+    status_tone[
+      effective_status(
+        profile?.status ?? "active",
+        profile?.last_seen_at ?? null,
+      )
+    ];
   const label_hidden = collapsed ? "lg:hidden" : "";
 
   return (
@@ -105,17 +111,17 @@ const UserCard = ({ collapsed }: { collapsed: boolean }) => {
 };
 
 const PAGE_PATH_TO_KEY: Record<string, string> = {
-  "/":          "dashboard",
+  "/": "dashboard",
   "/workspace": "workspace",
-  "/git":       "git",
-  "/users":     "users",
+  "/git": "git",
+  "/users": "users",
   "/inspector": "scanner",
   "/locations": "locations",
-  "/planning":  "planning",
-  "/crypto":    "crypto",
+  "/planning": "planning",
+  "/crypto": "crypto",
   "/subscriptions": "subscriptions",
-  "/clients":   "clients",
-  "/settings":  "settings",
+  "/clients": "clients",
+  "/settings": "settings",
 };
 
 export const SideRail = () => {
@@ -126,8 +132,8 @@ export const SideRail = () => {
   const [mobile_open, set_mobile_open] = useState(false);
 
   const is_root = profile?.role === "root";
-  const loaded       = usePermissionsStore(s => s.loaded)
-  const hidden_pages = usePermissionsStore(s => s.hidden_pages)
+  const loaded = usePermissionsStore((s) => s.loaded);
+  const hidden_pages = usePermissionsStore((s) => s.hidden_pages);
   const { is_fullscreen, toggle: toggle_fullscreen } = use_fullscreen();
 
   useEffect(() => {
@@ -143,24 +149,24 @@ export const SideRail = () => {
   };
 
   const all_items = [
-    { to: "/",          label: "Dashboard",              icon: GridIcon     },
-    { to: "/users",     label: is_root ? "Users" : "Team", icon: UsersIcon },
-    { to: "/git",       label: "Git",                    icon: GitBranchIcon },
-    { to: "/workspace", label: "Workspace",              icon: SlidersIcon  },
-    { to: "/system",    label: "System",                 icon: ServerIcon   },
-    { to: "/inspector", label: "Scanner",                icon: SearchIcon   },
-    { to: "/locations", label: "Locations",              icon: MapPinIcon   },
-    { to: "/planning",  label: "Flow Map",               icon: NetworkIcon  },
-    { to: "/crypto",    label: "Crypto",                 icon: CryptoIcon   },
-    { to: "/subscriptions", label: "Subscriptions",      icon: WalletIcon   },
-    { to: "/clients",   label: "Clients",                icon: BriefcaseIcon },
-    { to: "/settings",  label: "Settings",               icon: GearIcon     },
+    { to: "/", label: "Dashboard", icon: GridIcon },
+    { to: "/users", label: is_root ? "Users" : "Team", icon: UsersIcon },
+    { to: "/git", label: "Git", icon: GitBranchIcon },
+    { to: "/workspace", label: "Workspace", icon: SlidersIcon },
+    { to: "/system", label: "System", icon: ServerIcon },
+    { to: "/inspector", label: "Scanner", icon: SearchIcon },
+    { to: "/locations", label: "Locations", icon: MapPinIcon },
+    { to: "/planning", label: "Flow Map", icon: NetworkIcon },
+    { to: "/crypto", label: "Crypto", icon: CryptoIcon },
+    { to: "/subscriptions", label: "Subscriptions", icon: WalletIcon },
+    { to: "/clients", label: "Clients", icon: BriefcaseIcon },
+    { to: "/settings", label: "Settings", icon: GearIcon },
   ];
 
   const PRIVILEGED = new Set(["/system"]);
   const rail_items = is_root
     ? all_items
-    : all_items.filter(item => {
+    : all_items.filter((item) => {
         if (PRIVILEGED.has(item.to)) return false;
         if (!loaded) return true;
         return !hidden_pages.includes(PAGE_PATH_TO_KEY[item.to] ?? "");
@@ -237,6 +243,7 @@ export const SideRail = () => {
                 key={item.label}
                 to={item.to}
                 title={item.label}
+                prefetch="intent"
                 className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 ${center} ${
                   active
                     ? "bg-flag-red/8 text-flag-red before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:rounded-full before:bg-flag-red"
@@ -369,12 +376,12 @@ const ExitFullscreenIcon = () => (
 
 const NetworkIcon = () => (
   <svg {...icon_props}>
-    <circle cx="12" cy="5"  r="2" />
-    <circle cx="5"  cy="19" r="2" />
+    <circle cx="12" cy="5" r="2" />
+    <circle cx="5" cy="19" r="2" />
     <circle cx="19" cy="19" r="2" />
-    <line x1="12" y1="7"  x2="5"  y2="17" />
-    <line x1="12" y1="7"  x2="19" y2="17" />
-    <line x1="5"  y1="19" x2="19" y2="19" />
+    <line x1="12" y1="7" x2="5" y2="17" />
+    <line x1="12" y1="7" x2="19" y2="17" />
+    <line x1="5" y1="19" x2="19" y2="19" />
   </svg>
 );
 
