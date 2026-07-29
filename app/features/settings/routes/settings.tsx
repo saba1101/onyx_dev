@@ -4,6 +4,13 @@ import { motion } from "motion/react";
 import { useAuth } from "~/features/auth/lib/auth";
 import { SideRail } from "~/components/ui/side-rail";
 import { Toggle } from "~/components/ui/toggle";
+import {
+  Volume2Icon,
+  GithubIcon,
+  LockIcon,
+  EyeIcon,
+  EyeOffIcon,
+} from "~/components/ui/icons";
 import { use_theme, use_is_dark, type ThemeChoice } from "~/hooks/use-theme";
 import {
   use_theme_palette,
@@ -15,11 +22,20 @@ import {
   FONT_SIZES,
   type FontSize,
 } from "~/hooks/use-font-size";
+import { use_chat_sound_muted } from "~/hooks/use-chat-sound";
+import { use_notify } from "~/hooks/use-notify";
+import { cache_get, cache_set } from "~/lib/query-cache";
+import { supabase } from "~/lib/supabase";
+import { connect_github, clear_github_token } from "~/features/git/lib/github";
 
 export const meta = () => [{ title: "Settings — Onyx Dev" }];
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const INTRO_KEY = "disable_intro";
+const COLLAPSE_KEY = "rail_collapsed";
+const CACHE_GITHUB = "dashboard:github";
+
+type GithubCache = { name: string | null; synced: boolean };
 
 // ── Segment control ───────────────────────────────────────────────────────────
 
@@ -122,11 +138,14 @@ export default function Settings() {
   } = use_theme_palette();
   const { size: font_size, set_size, mounted: font_mounted } = use_font_size();
   const is_dark = use_is_dark();
+  const notify = use_notify();
 
   const [disable_intro, set_disable_intro] = useState(false);
+  const [rail_collapsed, set_rail_collapsed] = useState(false);
 
   useEffect(() => {
     set_disable_intro(localStorage.getItem(INTRO_KEY) === "true");
+    set_rail_collapsed(localStorage.getItem(COLLAPSE_KEY) === "true");
   }, []);
 
   const handle_intro = (value: boolean) => {
@@ -138,6 +157,105 @@ export default function Settings() {
       localStorage.removeItem(INTRO_KEY);
       document.documentElement.removeAttribute("data-no-intro");
     }
+  };
+
+  const handle_rail_collapsed = (value: boolean) => {
+    set_rail_collapsed(value);
+    localStorage.setItem(COLLAPSE_KEY, String(value));
+  };
+
+  const { muted: chat_muted, set_muted: set_chat_muted } =
+    use_chat_sound_muted();
+
+  const [gh_name, set_gh_name] = useState<string | null>(
+    () => cache_get<GithubCache>(CACHE_GITHUB)?.name ?? null,
+  );
+  const [gh_synced, set_gh_synced] = useState(
+    () => cache_get<GithubCache>(CACHE_GITHUB)?.synced ?? false,
+  );
+  const [gh_connecting, set_gh_connecting] = useState(false);
+  const [gh_disconnecting, set_gh_disconnecting] = useState(false);
+  const has_github = !!user?.identities?.some((i) => i.provider === "github");
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("github_username, github_token")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        const d = data as {
+          github_username: string | null;
+          github_token: string | null;
+        } | null;
+        if (!d) return;
+        set_gh_name(d.github_username);
+        set_gh_synced(!!d.github_token);
+        cache_set(CACHE_GITHUB, {
+          name: d.github_username,
+          synced: !!d.github_token,
+        });
+      });
+  }, [user?.id]);
+
+  const handle_gh_connect = async () => {
+    set_gh_connecting(true);
+    await connect_github(has_github, "/settings");
+  };
+
+  const handle_gh_disconnect = async () => {
+    if (!user) return;
+    set_gh_disconnecting(true);
+    const { error } = await clear_github_token(user.id);
+    set_gh_disconnecting(false);
+    if (error) {
+      notify({
+        tone: "error",
+        title: "Failed to disconnect",
+        message: error.message,
+      });
+      return;
+    }
+    set_gh_name(null);
+    set_gh_synced(false);
+    cache_set(CACHE_GITHUB, { name: null, synced: false });
+    notify({ tone: "success", title: "GitHub disconnected" });
+  };
+
+  const [pw_new, set_pw_new] = useState("");
+  const [pw_confirm, set_pw_confirm] = useState("");
+  const [pw_show, set_pw_show] = useState(false);
+  const [pw_saving, set_pw_saving] = useState(false);
+
+  const handle_password_submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pw_new.length < 8) {
+      notify({
+        tone: "error",
+        title: "Password too short",
+        message: "Must be at least 8 characters.",
+      });
+      return;
+    }
+    if (pw_new !== pw_confirm) {
+      notify({ tone: "error", title: "Passwords don't match" });
+      return;
+    }
+    set_pw_saving(true);
+    const { error } = await supabase.auth.updateUser({ password: pw_new });
+    set_pw_saving(false);
+    if (error) {
+      notify({
+        tone: "error",
+        title: "Failed to update password",
+        message: error.message,
+      });
+      return;
+    }
+    notify({ tone: "success", title: "Password updated" });
+    set_pw_new("");
+    set_pw_confirm("");
   };
 
   if (loading) return null;
@@ -305,6 +423,110 @@ export default function Settings() {
                 desc="Skip the typewriter animation on each page load"
               >
                 <Toggle checked={disable_intro} onChange={handle_intro} />
+              </Row>
+
+              {/* Sidebar default */}
+              <Row
+                label="Collapse sidebar by default"
+                desc="Start with the sidebar collapsed on every page load"
+              >
+                <Toggle
+                  checked={rail_collapsed}
+                  onChange={handle_rail_collapsed}
+                />
+              </Row>
+            </Section>
+
+            {/* ── Notifications ── */}
+            <Section label="Notifications" icon={<Volume2Icon size={13} />}>
+              <Row
+                label="Chat sound"
+                desc="Play a sound when a new message arrives"
+              >
+                <Toggle
+                  checked={!chat_muted}
+                  onChange={(v) => set_chat_muted(!v)}
+                />
+              </Row>
+            </Section>
+
+            {/* ── Integrations ── */}
+            <Section label="Integrations" icon={<GithubIcon size={13} />}>
+              <Row
+                label="GitHub"
+                desc={gh_synced ? `Connected as @${gh_name}` : "Not connected"}
+              >
+                {gh_synced ? (
+                  <button
+                    type="button"
+                    disabled={gh_disconnecting}
+                    onClick={handle_gh_disconnect}
+                    className="rounded-lg border border-line bg-card/60 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-flag-red/40 hover:text-ink disabled:opacity-60"
+                  >
+                    {gh_disconnecting ? "Disconnecting…" : "Disconnect"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={gh_connecting}
+                    onClick={handle_gh_connect}
+                    className="rounded-lg bg-flag-red px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                  >
+                    {gh_connecting ? "Redirecting…" : "Connect"}
+                  </button>
+                )}
+              </Row>
+            </Section>
+
+            {/* ── Account & Security ── */}
+            <Section label="Account & Security" icon={<LockIcon size={13} />}>
+              <Row
+                label="Change password"
+                desc="Update the password you use to sign in"
+                stacked
+              >
+                <form
+                  onSubmit={handle_password_submit}
+                  className="flex flex-col gap-2.5 sm:flex-row sm:items-center"
+                >
+                  <div className="relative">
+                    <input
+                      type={pw_show ? "text" : "password"}
+                      value={pw_new}
+                      onChange={(e) => set_pw_new(e.target.value)}
+                      placeholder="New password"
+                      autoComplete="new-password"
+                      className="w-full rounded-lg border border-line bg-line/10 px-3 py-2 pr-9 text-xs text-ink outline-none transition-colors focus:border-flag-red/50 sm:w-44"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => set_pw_show((v) => !v)}
+                      aria-label={pw_show ? "Hide password" : "Show password"}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-ink"
+                    >
+                      {pw_show ? (
+                        <EyeOffIcon size={14} />
+                      ) : (
+                        <EyeIcon size={14} />
+                      )}
+                    </button>
+                  </div>
+                  <input
+                    type={pw_show ? "text" : "password"}
+                    value={pw_confirm}
+                    onChange={(e) => set_pw_confirm(e.target.value)}
+                    placeholder="Confirm password"
+                    autoComplete="new-password"
+                    className="w-full rounded-lg border border-line bg-line/10 px-3 py-2 text-xs text-ink outline-none transition-colors focus:border-flag-red/50 sm:w-44"
+                  />
+                  <button
+                    type="submit"
+                    disabled={pw_saving}
+                    className="rounded-lg bg-flag-red px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                  >
+                    {pw_saving ? "Saving…" : "Update password"}
+                  </button>
+                </form>
               </Row>
             </Section>
           </div>
