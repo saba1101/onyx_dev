@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
 import { Link } from "react-router"
-import { LineChart, Line, ResponsiveContainer } from "recharts"
 import { SearchIcon, StarIcon, StarFilledIcon } from "~/components/ui/icons"
 import { cg, fmt_price, fmt_large, fmt_pct, pct_cls, type CoinMarket, type CoinSearchResult } from "~/features/crypto/lib/coingecko"
+
+const MarketSparkline = lazy(() =>
+  import("~/features/crypto/components/market-sparkline").then(m => ({ default: m.MarketSparkline })),
+)
 
 type SortKey = "market_cap_rank" | "current_price" | "price_change_percentage_24h" | "market_cap" | "total_volume"
 type SortDir  = "asc" | "desc"
@@ -223,11 +226,9 @@ export const MarketTable = ({ coins, loading, loading_more, has_more, on_load_mo
                   <td className="hidden px-4 py-3.5 lg:table-cell">
                     {spark.length > 0 && (
                       <div className="flex justify-end">
-                        <ResponsiveContainer width={72} height={28}>
-                          <LineChart data={spark}>
-                            <Line type="monotone" dataKey="p" dot={false} strokeWidth={1.5} stroke={s_clr} />
-                          </LineChart>
-                        </ResponsiveContainer>
+                        <Suspense fallback={<div className="h-7 w-[72px]" />}>
+                          <MarketSparkline data={spark} color={s_clr} />
+                        </Suspense>
                       </div>
                     )}
                   </td>

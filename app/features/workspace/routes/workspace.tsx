@@ -346,6 +346,20 @@ export default function WorkspacePage() {
   const [editing, set_editing] = useState<WProject | null>(null);
   const [deleting_id, set_deleting_id] = useState<string | null>(null);
 
+  // Goes through this instead of the raw setter so the query-cache stays in
+  // sync — otherwise a revisit to this page hydrates from the stale cached
+  // array (e.g. a just-deleted project reappearing) until the background
+  // load() refetch overwrites it a moment later.
+  const update_projects = (
+    updater: WProject[] | ((prev: WProject[]) => WProject[]),
+  ) => {
+    set_projects((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      cache_set(CACHE_PROJECTS, next);
+      return next;
+    });
+  };
+
   const load = () => {
     Promise.all([
       api.projects.list(),
@@ -435,13 +449,13 @@ export default function WorkspacePage() {
   };
 
   const on_saved = (p: WProject) => {
-    set_projects((prev) => {
+    update_projects((prev) => {
       const idx = prev.findIndex((x) => x.id === p.id);
       return idx >= 0 ? prev.map((x) => (x.id === p.id ? p : x)) : [p, ...prev];
     });
   };
   const on_deleted = (id: string) => {
-    set_projects((prev) => prev.filter((p) => p.id !== id));
+    update_projects((prev) => prev.filter((p) => p.id !== id));
   };
 
   const on_confirm_delete = async (id: string) => {

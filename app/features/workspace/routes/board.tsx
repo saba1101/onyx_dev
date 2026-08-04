@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react"
 import { Link, Navigate, useParams } from "react-router"
 import { motion, AnimatePresence } from "motion/react"
-import { AnalyticsTab } from "~/features/workspace/routes/analytics"
 import { supabase } from "~/lib/supabase"
 import { useAuth } from "~/features/auth/lib/auth"
 import { useProfile } from "~/features/profile/lib/profile-context"
@@ -16,6 +15,10 @@ import {
   api, STATUS_COLORS, TYPE_META,
   type WStatus, type WTask, type WProfile, type WProject,
 } from "~/features/workspace/lib/workspace"
+
+const AnalyticsTab = lazy(() =>
+  import("~/features/workspace/routes/analytics").then(m => ({ default: m.AnalyticsTab })),
+)
 
 export const meta = () => [{ title: "Workspace — Onyx Dev" }]
 
@@ -790,7 +793,15 @@ export default function BoardPage() {
 
         {/* Content */}
         {active_tab === "analytics" ? (
-          <AnalyticsTab project_id={project_id} />
+          <Suspense
+            fallback={
+              <div className="flex flex-1 items-center justify-center">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-flag-red" />
+              </div>
+            }
+          >
+            <AnalyticsTab project_id={project_id} />
+          </Suspense>
         ) : loading ? (
           <div className="flex flex-1 items-center justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-flag-red" />

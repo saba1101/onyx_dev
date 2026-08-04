@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react"
+import { Suspense, lazy, useEffect, useMemo, useState } from "react"
 import { motion } from "motion/react"
-import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts"
 import { useAuth } from "~/features/auth/lib/auth"
 import { SideRail } from "~/components/ui/side-rail"
 import { use_notify } from "~/hooks/use-notify"
@@ -21,6 +20,13 @@ import {
   compute_auto_entries, compute_auto_entries_for_all,
   type Service, type Entry, type EntryKind,
 } from "~/features/subscriptions/lib/subscriptions"
+
+const Sparkline = lazy(() =>
+  import("~/features/subscriptions/components/subscription-charts").then(m => ({ default: m.Sparkline })),
+)
+const BalanceChart = lazy(() =>
+  import("~/features/subscriptions/components/subscription-charts").then(m => ({ default: m.BalanceChart })),
+)
 
 export const meta = () => [{ title: "Subscriptions — Onyx Dev" }]
 
@@ -45,35 +51,6 @@ const running_balance = (service_id: string, entries: Entry[]) => {
     bal += e.kind === "income" ? e.amount : -e.amount
     return { date: e.occurred_on, balance: Math.round(bal * 100) / 100 }
   })
-}
-
-const ChartTip = ({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) => {
-  if (!active || !payload?.length) return null
-  const v = payload[0].value
-  return (
-    <div className="rounded-xl border border-line bg-card px-3 py-2 text-xs shadow-xl">
-      {label && <p className="mb-1 text-[10px] uppercase tracking-wide text-muted/60">{fmt_date(label)}</p>}
-      <p className={`font-semibold ${v >= 0 ? "text-light-green" : "text-loss"}`}>{fmt_money(v)}</p>
-    </div>
-  )
-}
-
-// ── Sparkline (mini, no axes) ──────────────────────────────────────────────────
-
-const Sparkline = ({ service_id, entries }: { service_id: string; entries: Entry[] }) => {
-  const points = running_balance(service_id, entries)
-  if (points.length < 2) {
-    return <div className="flex h-7 items-center text-[10px] italic text-muted/50">No entries yet</div>
-  }
-  const positive = points[points.length - 1].balance >= 0
-  const color = positive ? "var(--color-light-green)" : "var(--color-loss)"
-  return (
-    <ResponsiveContainer width="100%" height={28}>
-      <AreaChart data={points} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
-        <Area type="monotone" dataKey="balance" stroke={color} fill={color} fillOpacity={0.15} strokeWidth={1.5} dot={false} isAnimationActive={false} />
-      </AreaChart>
-    </ResponsiveContainer>
-  )
 }
 
 // ── Service table columns ──────────────────────────────────────────────────────
@@ -130,7 +107,11 @@ const build_service_columns = (
     key: "trend",
     header: "Trend",
     className: "hidden w-28 lg:table-cell",
-    cell: s => <Sparkline service_id={s.id} entries={entries} />,
+    cell: s => (
+      <Suspense fallback={<div className="h-7" />}>
+        <Sparkline points={running_balance(s.id, entries)} />
+      </Suspense>
+    ),
   },
   {
     key: "net",
@@ -318,21 +299,9 @@ const DetailModal = ({
             {chart.length < 2 ? (
               <div className="flex h-full items-center justify-center text-xs text-muted/50">Not enough data yet</div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chart} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="net_fill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={net >= 0 ? "var(--color-light-green)" : "var(--color-loss)"} stopOpacity={0.25} />
-                      <stop offset="95%" stopColor={net >= 0 ? "var(--color-light-green)" : "var(--color-loss)"} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="var(--color-line)" strokeOpacity={0.5} strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--color-muted)" }} axisLine={false} tickLine={false} tickFormatter={d => fmt_date(d).replace(/, \d+$/, "")} />
-                  <YAxis tick={{ fontSize: 9, fill: "var(--color-muted)" }} axisLine={false} tickLine={false} />
-                  <Tooltip content={<ChartTip />} />
-                  <Area type="monotone" dataKey="balance" stroke={net >= 0 ? "var(--color-light-green)" : "var(--color-loss)"} strokeWidth={2} fill="url(#net_fill)" dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<div className="h-full animate-pulse rounded-xl bg-line/20" />}>
+                <BalanceChart chart={chart} net={net} />
+              </Suspense>
             )}
           </div>
         </div>

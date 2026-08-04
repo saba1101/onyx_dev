@@ -743,6 +743,30 @@ export default function ClientsPage() {
   const [modal_open, set_modal_open] = useState(false);
   const [editing, set_editing] = useState<Client | null>(null);
 
+  // Every mutation goes through these instead of the raw setters, so the
+  // query-cache stays in sync — otherwise a revisit to this page hydrates
+  // from the stale cached array (e.g. a just-deleted client reappearing)
+  // until the background load() refetch overwrites it a moment later.
+  const update_clients = (
+    updater: Client[] | ((prev: Client[]) => Client[]),
+  ) => {
+    set_clients((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      cache_set(CACHE_CLIENTS, next);
+      return next;
+    });
+  };
+
+  const update_projects = (
+    updater: WProject[] | ((prev: WProject[]) => WProject[]),
+  ) => {
+    set_projects((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      cache_set(CACHE_PROJECTS, next);
+      return next;
+    });
+  };
+
   const load = async () => {
     const [{ data, error }, { data: proj_data }] = await Promise.all([
       api.list(),
@@ -756,10 +780,8 @@ export default function ClientsPage() {
       });
     const clients_data = (data as Client[]) ?? [];
     const projects_data = (proj_data as WProject[]) ?? [];
-    set_clients(clients_data);
-    set_projects(projects_data);
-    cache_set(CACHE_CLIENTS, clients_data);
-    cache_set(CACHE_PROJECTS, projects_data);
+    update_clients(clients_data);
+    update_projects(projects_data);
     set_fetching(false);
   };
 
@@ -781,7 +803,7 @@ export default function ClientsPage() {
         },
         () => {
           api.list().then(({ data }) => {
-            if (data) set_clients(data as Client[]);
+            if (data) update_clients(data as Client[]);
           });
         },
       )
@@ -872,14 +894,14 @@ export default function ClientsPage() {
   };
 
   const on_saved = (c: Client) => {
-    set_clients((prev) => {
+    update_clients((prev) => {
       const idx = prev.findIndex((x) => x.id === c.id);
       return idx >= 0 ? prev.map((x) => (x.id === c.id ? c : x)) : [c, ...prev];
     });
     set_selected_id((prev) => prev ?? c.id);
   };
   const on_deleted = (id: string) => {
-    set_clients((prev) => prev.filter((c) => c.id !== id));
+    update_clients((prev) => prev.filter((c) => c.id !== id));
     set_selected_id((prev) => (prev === id ? null : prev));
   };
 
@@ -898,7 +920,7 @@ export default function ClientsPage() {
 
   const on_status_change = async (id: string, status: ClientStatus) => {
     const prev = clients;
-    set_clients((cs) => cs.map((c) => (c.id === id ? { ...c, status } : c)));
+    update_clients((cs) => cs.map((c) => (c.id === id ? { ...c, status } : c)));
     const { error } = await api.update(id, { status });
     if (error) {
       notify({
@@ -906,7 +928,7 @@ export default function ClientsPage() {
         title: "Failed to update status",
         message: error.message,
       });
-      set_clients(prev);
+      update_clients(prev);
     }
   };
 
@@ -915,7 +937,7 @@ export default function ClientsPage() {
     client_id: string | null,
   ) => {
     const prev = projects;
-    set_projects((ps) =>
+    update_projects((ps) =>
       ps.map((p) => (p.id === project_id ? { ...p, client_id } : p)),
     );
     const { error } = await workspace_api.projects.update(project_id, {
@@ -927,7 +949,7 @@ export default function ClientsPage() {
         title: "Failed to update link",
         message: error.message,
       });
-      set_projects(prev);
+      update_projects(prev);
     }
   };
 
