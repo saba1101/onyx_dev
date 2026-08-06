@@ -428,3 +428,10 @@ export const EyeOffIcon = make_stroke(
     <line x1="2" y1="2" x2="22" y2="22" />
   </>,
 )
+
+export const HomeIcon = make_stroke(
+  <>
+    <path d="m3 11 9-8 9 8" />
+    <path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10" />
+  </>,
+)

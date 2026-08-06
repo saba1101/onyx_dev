@@ -21,6 +21,7 @@ import { PermissionsProvider } from "~/features/permissions/lib/permissions-cont
 import { LocationSharingSync } from "~/features/locations/lib/location-sharing-sync";
 import { ChatWidget } from "~/features/chat/components/chat-widget";
 import { UpdateNotice } from "~/components/ui/update-notice";
+import { NotFoundPage } from "~/components/ui/not-found";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -112,13 +113,17 @@ export const HydrateFallback = () => (
 );
 
 export const ErrorBoundary = ({ error }: Route.ErrorBoundaryProps) => {
+  if (isRouteErrorResponse(error) && error.status === 404) {
+    return <NotFoundPage />;
+  }
+
   let title = "Error";
   let msg = "Something went wrong.";
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    title = error.status === 404 ? "404" : "Error";
-    msg = error.status === 404 ? "Page not found." : error.statusText || msg;
+    title = "Error";
+    msg = error.statusText || msg;
   } else if (import.meta.env.DEV && error instanceof Error) {
     msg = error.message;
     stack = error.stack;

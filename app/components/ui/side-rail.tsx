@@ -157,7 +157,7 @@ export const SideRail = () => {
     { to: "/inspector", label: "Scanner", icon: SearchIcon },
     { to: "/locations", label: "Locations", icon: MapPinIcon },
     { to: "/planning", label: "Flow Map", icon: NetworkIcon },
-    { to: "/crypto", label: "Crypto", icon: CryptoIcon },
+    // { to: "/crypto", label: "Crypto", icon: CryptoIcon },
     { to: "/subscriptions", label: "Subscriptions", icon: WalletIcon },
     { to: "/clients", label: "Clients", icon: BriefcaseIcon },
     { to: "/settings", label: "Settings", icon: GearIcon },
